@@ -25,7 +25,6 @@ public class DraggableShip : MonoBehaviour,IDragHandler, IBeginDragHandler, IEnd
         m_oldPos = GetComponent<RectTransform>().position;
         initialPos = GetComponent<RectTransform>().position;
         initSizeV = GetComponent<RectTransform>().sizeDelta;
-
     }
 	
 	// Update is called once per frame
@@ -156,5 +155,7 @@ public class DraggableShip : MonoBehaviour,IDragHandler, IBeginDragHandler, IEnd
     {
         GetComponent<RectTransform>().position = initialPos;
         GetComponent<RectTransform>().sizeDelta = initSizeV;
+        GetComponent<RectTransform>().localEulerAngles = Vector3.zero;
+        m_ownShip = null;
     }
 }

@@ -17,7 +17,7 @@ public class GlobalData : MonoBehaviour {
     public static bool bLogin = false;
     public static bool bLiveChannel = true;
     public static bool bFinished = false;
-   
+    public static bool bRunonce = false;
     public static string resultJsonStr = "";
     public static GameControl gGameControl = new GameControl();  
     public static SettingInfo gSettingInfo = new SettingInfo();
@@ -30,16 +30,25 @@ public class GlobalData : MonoBehaviour {
 
     public static string gblockhash;
     public static long gblockHeight;
+    public static long gChannelHeight;
     public static string gblockStatusStr;
     public static string gcurrentPlayedChannedId;
 
     public static bool gbTurn;
+    public static bool gbSumitPosition=false;
+
     public static List<ChannelInfo> ggameChannelList= new List<ChannelInfo>();
+    public static List<ChannelInfo> ggameLobbyChannelList = new List<ChannelInfo>();
+    public static List<string> ggameIgnoredChannelIDs = new List<string>();
+
+
     public static List<LeaderInfo> ggameLeaderList = new List<LeaderInfo>();
 
     public static int gWinner = -1;
 
     public static int gPlayerIndex = 0;
+    public static DisputeStatus disputeStatus=new DisputeStatus();
+
 	// Use this for initialization
 	void Start () {
 		
@@ -91,8 +100,32 @@ public class GlobalData : MonoBehaviour {
         gOpponentName = null;
         gPlayerIndex = 0;
         gWinner = -1;
+        disputeStatus = null;
+        gGameControl= new GameControl();
         //bOpenedChannel = false;        
-}
+    }
+    public static void AddChannel(ChannelInfo c)
+    {
+        //===== add channel in case that channel id do not exist in ignorelist.
+        if(!ggameIgnoredChannelIDs.Contains(c.id))
+            ggameChannelList.Add(c);
+    }
+    public static bool IsIgnoreChannel(string strId)
+    {
+        return ggameIgnoredChannelIDs.Contains(strId);
+    }
+    public static bool IsOpenedChannel()
+    {
+        foreach(ChannelInfo c in ggameChannelList)
+        {
+            foreach(string s in c.userNames)
+            {
+                //-----------   if  channel that Player created or joined  exists,   ------------------//
+                if (s == GlobalData.gPlayerName.Substring(2)) return true;
+            }
+        }
+        return false;
+    }
 }
 public class SettingInfo
 {
@@ -110,7 +143,19 @@ public class SettingInfo
     {
         JsonUtility.FromJson<SettingInfo>(System.IO.File.ReadAllText(jsonPath));
     }
+    public void SaveToJson()
+    {
+        string jsonPath;
+#if UNITY_EDITOR
+        if (File.Exists(GlobalData.GetSaveSettingPath()))
+            File.Delete(GlobalData.GetSaveSettingPath());
+#endif
 
+        if (!File.Exists(GlobalData.GetSaveSettingPath()))
+            File.Copy(Path.Combine(Application.streamingAssetsPath, "setting.json"), GlobalData.GetSaveSettingPath());
+        jsonPath = GlobalData.GetSaveSettingPath();
+        File.WriteAllText(jsonPath, JsonUtility.ToJson(this));
+    }
     public string GetServerUrl()
     {
         //return "http://" + userName + ":" + userPassword + "@" + ip + ":" + portNumber + "/wallet/game.dat";
@@ -154,6 +199,7 @@ public class ChannelInfo
     public int port;
     public CHANNEL_STATUE status;
     public string statusText;
+    public bool bignored;
 }
 public class LeaderInfo
 {

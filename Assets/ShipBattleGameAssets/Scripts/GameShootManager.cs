@@ -30,9 +30,11 @@ public class GameShootManager: MonoBehaviour, IPointerClickHandler
 
     public void OnPointerClick(PointerEventData eventData) // 3
     {
-        if (GlobalData.bPlaying) return;
-
-        if (!GlobalData.gbTurn) return;
+        if (!GlobalData.bPlaying) return;
+        if (!GlobalData.gbTurn)
+        {            
+            return;
+        }
         if (!bFireboard) return;
         
         //Debug.Log(eventData.clickCount);

@@ -4,3 +4,4 @@ obj/
 *.csproj
 debug - Copy.log
 *.meta
+Library/

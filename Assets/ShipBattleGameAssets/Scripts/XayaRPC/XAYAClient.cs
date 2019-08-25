@@ -47,7 +47,7 @@ public class XAYAClient : MonoBehaviour
         }
         else
         {
-            Debug.LogError("Failed to connect with XAYAService.");
+            Debug.Log("Failed to connect with XAYAService.");
         }
         return false;
     }
@@ -183,6 +183,33 @@ public class XAYAClient : MonoBehaviour
         //string resultStr= forceCommand(nameUpdateCmd);
         //return resultStr;
         return xayaService.NameUpdate(playerName, Value, new object());
+    }
+    public bool IsRunningXayaServer()
+    {
+        try
+        {
+            foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcesses())
+            {
+                try
+                {
+                    if (p.ProcessName == "xayad")
+                    {
+                        //print("shipsd is already locally running.");
+                        return true;
+                    }
+                    //print(p.ToString());
+                }
+                catch (System.Exception e)
+                {
+                    print("Mini exception when trying to list the name " + e);
+                }
+            }
+        }
+        catch (System.Exception e)
+        {
+            print("Exception caught " + e);
+        }
+        return false;
     }
 }
 

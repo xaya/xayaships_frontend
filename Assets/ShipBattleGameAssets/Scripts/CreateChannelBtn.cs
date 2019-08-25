@@ -24,14 +24,14 @@ public class CreateChannelBtn : MonoBehaviour {
 	void Update() {
         //=====================Add or Delete Pannel  =======================//
 
-        if (scrollParentPanel.transform.childCount > GlobalData.ggameChannelList.Count)
+        if (scrollParentPanel.transform.childCount > GlobalData.ggameLobbyChannelList.Count)
         {
-            for (int i = GlobalData.ggameChannelList.Count; i < scrollParentPanel.transform.childCount; i++)
+            for (int i = GlobalData.ggameLobbyChannelList.Count; i < scrollParentPanel.transform.childCount; i++)
                 GameObject.Destroy(scrollParentPanel.transform.GetChild(i).gameObject);
         }
         else
         {
-            for (int i = scrollParentPanel.transform.childCount; i < GlobalData.ggameChannelList.Count; i++)
+            for (int i = scrollParentPanel.transform.childCount; i < GlobalData.ggameLobbyChannelList.Count; i++)
             {
                 CreateCannel(i);
             }
@@ -57,7 +57,7 @@ public class CreateChannelBtn : MonoBehaviour {
         {
             GameObject.Destroy(t.gameObject);
         }
-        for (int i = 0; i < GlobalData.ggameChannelList.Count; i++)
+        for (int i = 0; i < GlobalData.ggameLobbyChannelList.Count; i++)
         {
             CreateCannel(i);
         }

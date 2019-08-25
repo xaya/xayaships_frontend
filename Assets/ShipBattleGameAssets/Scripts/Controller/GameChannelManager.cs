@@ -4,6 +4,10 @@ using UnityEngine;
 using UnityEngine.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using BattleShip.BLL.GameLogic;
+using BattleShip.BLL.Ships;
+using BattleShip.BLL.Responses;
+
 public class GameChannelManager : MonoBehaviour
 {
     // Start is called before the first frame update
@@ -14,12 +18,15 @@ public class GameChannelManager : MonoBehaviour
     public GameShootManager ourBoardManager;
     public ChannelDeamonManager channelDeamon;
     int curPort = 29060;
+
+    GameUserManager gameUserManager;
     //==========//
 
     void Start()
     {
         xayaClient = GetComponent<XAYAClient>();
         channelPorts = new Dictionary<string, ChannelStatus>();
+        gameUserManager = GetComponent<GameUserManager>();
     }
 
     // Update is called once per frame
@@ -30,11 +37,15 @@ public class GameChannelManager : MonoBehaviour
     //===================== when clicking   Create Channel button, directly call ========================//
     public void CreateGameChannel()
     {
-
+        if (GlobalData.IsOpenedChannel())
+        {
+            gameUserManager.ShowInfo("You already have opened channel.");
+            return;
+        }
         string address=xayaClient.GetNewAddress(GlobalData.gPlayerName);
         string value = "{\"g\":{\"xs\":{\"c\":{\"addr\":\""+address+"\"}}}}";        
         string texid=xayaClient.NameUpdate(GlobalData.gPlayerName, value);
-        GetComponent<GameUserManager>().ShowInfo("CREATE CHANNEL.  Please wait a second...");
+        GetComponent<GameUserManager>().ShowInfo("CREATE CHANNEL. Please wait...");
 
         //RunChannelService(texid);
         //=================== Waiting state ==================//
@@ -88,7 +99,7 @@ public class GameChannelManager : MonoBehaviour
         string value = "{\"g\":{\"xs\":{\"j\":{\"id\":\""+ channelId + "\", \"addr\":\"" + address + "\"}}}}";
         string texid = xayaClient.NameUpdate(GlobalData.gPlayerName, value);
 
-        GetComponent<GameUserManager>().ShowInfo("JOIN CHANNEL.("+ GlobalData.GetChannel(channelId).userNames[0]+")" +". Please wait a second.");
+        GetComponent<GameUserManager>().ShowInfo("JOIN CHANNEL.("+ GlobalData.GetChannel(channelId).userNames[0]+")" +". Please wait...");
         //KillIsChannel();     
     }
 
@@ -99,7 +110,7 @@ public class GameChannelManager : MonoBehaviour
         string value = "{\"g\":{\"xs\":{\"a\":{\"id\":\"" + channelId + "\"}}}}";
         string texid = xayaClient.NameUpdate(GlobalData.gPlayerName, value);
 
-        GetComponent<GameUserManager>().ShowInfo("CLOSE CHANNEL. Please wait a second.");
+        GetComponent<GameUserManager>().ShowInfo("CLOSE CHANNEL. Please wait...");
         //=================================================================================================================//
         //WaitForSeconds(0.5f);
 
@@ -147,10 +158,10 @@ public void GetCurrentStateOnly(string channelId)
                 if (status != null)
                 {
                     SetGameChannelSateFromJson(channelId, status);
-                    Debug.LogError("getstate!"+Time.timeSinceLevelLoad);
+                    Debug.Log("getstate!"+Time.timeSinceLevelLoad);
                 }
                 else
-                    Debug.LogError("getstate_error!" + Time.timeSinceLevelLoad);
+                    Debug.Log("getstate_error!" + Time.timeSinceLevelLoad);
             }
             catch (System.Exception e)
             {                
@@ -166,7 +177,7 @@ public void GetCurrentStateOnly(string channelId)
 
         JObject jresult = JObject.Parse(result) as JObject;
         jresult = jresult["result"] as JObject;
-        //Debug.Log(jresult.ToString());
+        Debug.Log(jresult.ToString());
 
         channelPorts[channelId].version = jresult["version"].ToString();
         //Debug.Log("exist:"+  jresult["existsonchain"].ToString());
@@ -186,9 +197,9 @@ public void GetCurrentStateOnly(string channelId)
                 else
                     GlobalData.ErrorPopup("The game was finished. You have lost.");
 
-                Debug.LogError("beforeInit:" + GlobalData.bLiveChannel);                
+                Debug.Log("beforeInit:" + GlobalData.bLiveChannel);                
                 InitGameboard();
-                Debug.LogError("Init game! live:" + GlobalData.bLiveChannel);
+                Debug.Log("Init game! live:" + GlobalData.bLiveChannel);
                 GlobalData.bFinished = true;
             }
             return;
@@ -244,46 +255,96 @@ public void GetCurrentStateOnly(string channelId)
         {
             GetComponent<GameUserManager>().ShowInfo("YOUR TURN!");
         }
-        //========================================== Shooting result ===================================//
-        JObject jParsed = jresult["current"]["state"] as JObject;
-        //jresult["current"]["state"]["parsed"] as JObject;
 
-        //Debug.Log(jParsed.ToString());
-        jParsed = jParsed["parsed"] as JObject;
-        //Debug.Log(jParsed.ToString());        
+        if(jresult["height"]!=null)
+        {
+            GlobalData.gChannelHeight = long.Parse(jresult["height"].ToString());
+        }
 
-        Debug.LogError(jParsed.ToString());
+        //================= ****** Dispute  *****      ============================//
+            SetDisputeStatus(jresult["dispute"] as JObject) ;
+        //================= **** Shooting result **** ===================================//
+            JObject jParsed = jresult["current"]["state"] as JObject;          
+            jParsed = jParsed["parsed"] as JObject;      
+            Debug.Log(jParsed.ToString());
+            //if (jParsed == null || jParsed["phase"].ToString()!="shoot") return;
+            if (jParsed == null ) return;        
+            JArray jGuesses = jParsed["guesses"] as JArray;
+            Debug.Log(jGuesses.ToString());
+            if(jGuesses!=null)  SetShootStatus(jGuesses);
 
-        //if (jParsed == null || jParsed["phase"].ToString()!="shoot") return;
-        if (jParsed == null ) return;
+        //============== ******* Winner state ****** =================//
+            if (jParsed["winner"] != null && jParsed["phase"].ToString() == "finished")
+            {
+                GlobalData.gWinner = int.Parse(jParsed["winner"].ToString());
+                Debug.Log("Game Finished!");
+                string strInfo = "You have won.";
+                if (GlobalData.gPlayerIndex != GlobalData.gWinner)
+                    strInfo = "You have lost."; 
+                GetComponent<GameUserManager>().ShowInfo("GAME FINISHED! " + strInfo);
+            }        
+        //==============================================================================================//
 
-        //Debug.Log(jParsed.ToString());
-        JArray jGuesses= jParsed["guesses"] as JArray;        
-        Debug.Log(jGuesses.ToString());
+        //Debug.Log(jresult["current"]["state"]["whoseturn"].ToString());
 
-        if (jGuesses==null && jGuesses.Count < 2) return;
+    }
+    void SetDisputeStatus(JObject jsonDispute)
+    {       
 
-        string playerGuesses1 ;
-        string playerGuesses2 ;
+        if (jsonDispute != null)
+        {
+            string jsonString = jsonDispute.ToString();
+            DisputeStatus disputeStatus = JsonConvert.DeserializeObject<DisputeStatus>(jsonString);
+            GlobalData.disputeStatus = disputeStatus;
+
+            if (!disputeStatus.canresolve)
+            {
+                if (GlobalData.gbTurn)
+                    gameUserManager.ShowInfo("There is dispute!");
+                gameUserManager.DisputeDisplay();
+            }
+            else
+            {
+                gameUserManager.DisputeDisplay(false);
+            }
+        }
+        else
+        {            
+            if(GlobalData.disputeStatus!=null)
+                GlobalData.disputeStatus.canresolve = true;
+            gameUserManager.DisputeDisplay(false);
+        }
+        //else GlobalData.disputeStatus.canresolve = true;
+        //=============================================//
+
+    }
+    void SetShootStatus(JArray jGuesses)
+    {
+        
+
+        if (jGuesses == null && jGuesses.Count < 2) return;
+
+        string playerGuesses1;
+        string playerGuesses2;
         gameShootManager.ClearMarker();
         ourBoardManager.ClearMarker();
 
-        if(GlobalData.gPlayerIndex==1)
+        if (GlobalData.gPlayerIndex == 1)
         {
-             playerGuesses1 = jGuesses[0].ToString();
-             playerGuesses2 = jGuesses[1].ToString();
+            playerGuesses1 = jGuesses[0].ToString();
+            playerGuesses2 = jGuesses[1].ToString();
         }
         else
         {
             playerGuesses1 = jGuesses[1].ToString();
             playerGuesses2 = jGuesses[0].ToString();
         }
-        
-        for(int i=0; i<playerGuesses1.Length;i++)
+
+        for (int i = 0; i < playerGuesses1.Length; i++)
         {
-            string ch = playerGuesses1.Substring(i, 1);            
-            int row = i % 9+1;
-            int col = i / 9+1;
+            string ch = playerGuesses1.Substring(i, 1);
+            int row = i % 9 + 1;
+            int col = i / 9 + 1;
             if (ch == "x")
             {
                 gameShootManager.SetMarker(new Vector2(row, col), true);
@@ -301,7 +362,7 @@ public void GetCurrentStateOnly(string channelId)
             int col = i / 9 + 1;
             if (ch == "x")
             {
-                 ourBoardManager.SetMarker(new Vector2(row, col), true);
+                ourBoardManager.SetMarker(new Vector2(row, col), true);
             }
             if (ch == "m")
             {
@@ -309,22 +370,6 @@ public void GetCurrentStateOnly(string channelId)
                 ourBoardManager.SetMarker(new Vector2(row, col), false);
             }
         }
-
-        //============== Winner state =================//
-        if (jParsed["winner"] != null && jParsed["phase"].ToString() == "finished")
-        {
-            GlobalData.gWinner = int.Parse(jParsed["winner"].ToString());
-            Debug.Log("Game Finished!");
-            string strInfo = "You have won.";
-            if (GlobalData.gPlayerIndex != GlobalData.gWinner)
-                strInfo = "You have lost."; 
-            GetComponent<GameUserManager>().ShowInfo("GAME FINISHED! " + strInfo);
-
-        }
-        
-        //==============================================================================================//
-
-        //Debug.Log(jresult["current"]["state"]["whoseturn"].ToString());
 
     }
     private IEnumerator shipsdChannelRpcCommand(string requestJsonStr, string channelId, System.Action<string> callback,float delay=0.0f)
@@ -360,8 +405,8 @@ public void GetCurrentStateOnly(string channelId)
         {
             //GlobalData.ErrorPopup(www.error);
             //GetComponent<GameUserManager>().ShowInfo("Channel State Error!");
-            Debug.LogError(www.error);
-            Debug.LogError(requestJsonStr);
+            Debug.Log(www.error);
+            Debug.Log(requestJsonStr);
             yield return new WaitForSeconds(3);
             tempStr = www.error;
             //GlobalData.bOpenedChannel = false;
@@ -528,11 +573,11 @@ public void GetCurrentStateOnly(string channelId)
         www.method = UnityWebRequest.kHttpVerbPOST;
         www.SetRequestHeader("Content-Type", "application/json"); www.SetRequestHeader("Accept", "application/json");
 
-        Debug.LogError(url + " cmd:  " + cmdstr);
-        Debug.LogError("channelForce stop-request-time:" + Time.timeSinceLevelLoad);
+        Debug.Log(url + " cmd:  " + cmdstr);
+        Debug.Log("channelForce stop-request-time:" + Time.timeSinceLevelLoad);
         www.SendWebRequest();        
         //yield return Ninja.JumpToUnity;
-        Debug.LogError("channelForce stop-final-time:" + Time.timeSinceLevelLoad);
+        Debug.Log("channelForce stop-final-time:" + Time.timeSinceLevelLoad);
         new WaitForSeconds(0.01f);
         GlobalData.bLiveChannel = false;
     }
@@ -541,26 +586,52 @@ public void GetCurrentStateOnly(string channelId)
         //===============  For Testing =============//
         //if (GlobalData.bPlaying) return;
         //============================//
+        
         char[] positionstr=new char[64];
         string strPos = "";
         for (int i = 0; i < 64; i++)
             positionstr[i] = '.';
         //positionstr = "";
+        bool bSetPos = true;
+
+        int[][] matrixShipsIndex=new int[8][];
+        for (int i = 0; i < 8; i++)
+            matrixShipsIndex[i] = new int[8];
+        for(int i=0;i<8;i++)
+            for(int j=0;j<8;j++)
+            {
+                matrixShipsIndex[i][j] = -1;
+            }
+        //foreach()
+
         foreach(Transform tShip in GetComponent<GameUserManager>().MyshipObjs.transform)
         {
-            if (tShip.GetComponent<DraggableShip>().GetPositions() == null) continue;
+            if (tShip.GetComponent<DraggableShip>().GetPositions() == null)
+            {
+                //--------- some ships is not seted position-------------------------//             
+                bSetPos = false;
+                continue;
+                //----------------------------///
+            }
+
             foreach( BattleShip.BLL.Requests.Coordinate c in  tShip.GetComponent<DraggableShip>().GetPositions())
             {
                 positionstr[(c.YCoordinate-1) * 8 + (c.XCoordinate-1)] = 'x';
+                
             }
         }
 
+        if (!bSetPos)
+        {
+            GetComponent<GameUserManager>().ShowInfo("You must position your ships!");
+            return;
+        }
         for (int i = 0; i < 64; i++)
             strPos+=positionstr[i];
         Debug.Log(GlobalData.gcurrentPlayedChannedId);
         SetPositionRequest(GlobalData.gcurrentPlayedChannedId, strPos);
-
-        //GlobalData.bPlaying = true;
+        GlobalData.gbSumitPosition = true;
+        GlobalData.bPlaying = true;
         Debug.Log(strPos);
     }
     public void SetShootSubmit(Vector2 v)
@@ -608,16 +679,38 @@ public void GetCurrentStateOnly(string channelId)
         //=======================================//
 #if UNITY_STANDALONE_LINUX        
         StopForceChannel();
-        Debug.LogError("stop in linux!");      
+        Debug.Log("stop in linux!");      
 #else
         KillIsChannel();
         //StopForceChannel();
 #endif
 
     }
+    public bool IsSetPosition()
+    {
+        Debug.Log(GlobalData.gGameControl.gameMyBoard.GetCurrnetShipIndex());
+        return GlobalData.gGameControl.gameMyBoard.GetCurrnetShipIndex() < 7;
+    }
+    public void DisputeRequest()
+    {
+        string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"filedispute\", \"id\":0}";
+        StartCoroutine(shipsdChannelRpcCommand(cmdstr, GlobalData.gcurrentPlayedChannedId, (status) => { }));
+
+    }
 }
 
+public class DisputeStatus
+{
 
+    public bool canresolve;
+    public long height;
+    public int whoseturn;
+    public DisputeStatus()
+    {
+        this.height = 0;
+        this.canresolve = true;
+    }
+}
 public class ChannelStatus
 {
     public int port;

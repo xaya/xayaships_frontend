@@ -1,8 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
-using Newtonsoft.Json;
+using CielaSpike;
+using UnityEngine.Networking;using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Linq;
 
@@ -13,46 +13,74 @@ public class ShipSDClient : MonoBehaviour
     [SerializeField]
     UnityEngine.UI.Text shipsdPathBackfix;
 
+    [SerializeField]
+    UnityEngine.UI.Toggle gspRunnungToggle;
     //[SerializeField]
       //UnityEngine.UI.InputField inputGSPStatus;
 
     GameObject m_errorBox = null;
+
+    int errorCounter = 0;
+    bool bCurrentLive = false;
+    float runTime = 0;
     // Start is called before the first frame update
     void Start()
     {
         //m_errorBox = GameObject.Find("errorBox");
-        
+        if (IsRunningGSPServer())
+        {            
+            GetCurrentStateAndWaiting();
+            runTime = Time.time;
+            //return;
+        }
     }
 
     // Update is called once per frame
     void Update()
     {
-        
+        //Debug.Log("GSP live" + bCurrentLive);
+        if(!bCurrentLive && (Time.time - runTime)>15 && GetComponent<GameUserManager>() && gspRunnungToggle.isOn )
+        {
+            Debug.Log("GSP restart!!");
+            KillGSP();
+            GlobalData.ErrorPopup("GSP failed to start.");
+            //GetComponent<GameUserManager>().DisplayConnectionUI();
+        }        
     }
     public void startGSPServer()
     {
         //--------Checking Local Server running state-----------//
-        if (IsRunningGSPServer()) return;
+        if (IsRunningGSPServer())
+        {
+            //GetCurrentStateAndWaiting();
+            return;
+        }
         //------------------------------------------------------//
         string strCmdText;
         GetComponent<GameUserManager>().UpdateSettingInfo();
 
         if (shipsdPathBackfix == null || shipsdPathPrefix == null) return;
-        string strShipSDPath = shipsdPathPrefix.text + GlobalData.gSettingInfo.rpcUserName + ":" + GlobalData.gSettingInfo.rpcUserPassword + shipsdPathBackfix.text;
+        string strShipSDPath = shipsdPathPrefix.text + GlobalData.gSettingInfo.rpcUserName + ":" + GlobalData.gSettingInfo.rpcUserPassword + "@"+ GlobalData.gSettingInfo.xayaURL+"\" --game_rpc_port="+29050+ shipsdPathBackfix.text;
         strCmdText = Application.streamingAssetsPath+ "/" + strShipSDPath;
         //strCmdText+= " -log_dir=\"datadir\" --v=1";
 
         strCmdText += " --v=1";
-        string strLinuxParams= " shipsd --xaya_rpc_url=\"http://"+ GlobalData.gSettingInfo.rpcUserName + ":" +GlobalData.gSettingInfo.rpcUserPassword + "@localhost:8396\" --game_rpc_port=29050 --datadir=\"%appdata%/Xaya-Electron/shipsdatadir\" -alsologtostderr --v=1";
+        string envPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
+        //Debug.Log(envPath);
+        string strLinuxParams= " shipsd --xaya_rpc_url=\"http://"+ GlobalData.gSettingInfo.rpcUserName + ":" +GlobalData.gSettingInfo.rpcUserPassword + "@"+GlobalData.gSettingInfo.xayaURL+"\" --game_rpc_port=29050 --datadir=\""+envPath+"/.xayagame\" -alsologtostderr --v=1";
+
         //System.Diagnostics.Process.Start("cmd.exe", "/c " +strCmdText); //Start cmd process
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR
-           XAYABitcoinLib.Utils.StartService("cmd.exe", "/c" + strCmdText); 
+           XAYABitcoinLib.Utils.StartService("cmd.exe", "/c" + strCmdText);
 #else
         XAYABitcoinLib.Utils.StartService("/bin/bash", "-c '" + strLinuxParams+"'");
         
 #endif
-        Debug.Log(strLinuxParams);
-
+        Debug.Log("Win GSP path" + strCmdText);
+        //Debug.Log("Linux GSP path:"+ strLinuxParams);
+        GetCurrentStateAndWaiting();
+        runTime = Time.time;
+        Debug.Log(runTime);
     }
 
     public void GetCurrentStateAndWaiting()
@@ -89,7 +117,9 @@ public class ShipSDClient : MonoBehaviour
         oldChannelList = GlobalData.ggameChannelList;
         if(GlobalData.ggameChannelList!=null)
             GlobalData.ggameChannelList.Clear();
-        
+        if (GlobalData.ggameLobbyChannelList != null)
+            GlobalData.ggameLobbyChannelList.Clear();
+
         foreach (KeyValuePair<string, JObject> item in dictObj)
         {
             ChannelInfo channelInfo = new ChannelInfo();
@@ -99,7 +129,6 @@ public class ShipSDClient : MonoBehaviour
             ChannelInfo oldChannel = null;
             foreach (ChannelInfo c in oldChannelList) if (c.id == channelInfo.id) oldChannel = c;            
             
-
             channelInfo.userNames = new string[a.Count];
             channelInfo.statusText =  item.Value["state"]["parsed"]["phase"].ToString();
 
@@ -108,8 +137,17 @@ public class ShipSDClient : MonoBehaviour
             {
                 channelInfo.userNames[index++] = j["name"].ToString();
             }
+            if(!GlobalData.bRunonce && a.Count>1)
+            {
+                channelInfo.bignored = true;
+                GlobalData.ggameIgnoredChannelIDs.Add(channelInfo.id);
+                continue;
+            }
+            
+            GlobalData.AddChannel(channelInfo);
 
-            GlobalData.ggameChannelList.Add(channelInfo);
+            if (a.Count == 1) GlobalData.ggameLobbyChannelList.Add(channelInfo);
+
 
             if (!GlobalData.bLogin) continue;
 
@@ -128,8 +166,8 @@ public class ShipSDClient : MonoBehaviour
                 //=========================    ==============================//                    
                 if(!GetComponent<GameUserManager>().IsExistName("p/"+opponentName))    //=== case  only other user====//
                 {
-                    Debug.LogError("liveFlag:" + GlobalData.bLiveChannel);
-                    if (!GlobalData.bLiveChannel)
+                    Debug.Log("liveFlag:" + GlobalData.bLiveChannel);
+                    if (!GlobalData.bLiveChannel && !GlobalData.IsIgnoreChannel(channelInfo.id))
                     {
                         GlobalData.bOpenedChannel = true;
                         //if (!GlobalData.bLogin)
@@ -140,6 +178,7 @@ public class ShipSDClient : MonoBehaviour
                         GetComponent<GameUserManager>().InitMenu();
                         GlobalData.bLiveChannel = true;
                         GlobalData.bFinished = false;
+                        GlobalData.bPlaying = false;
                     }
                     //Debug.Log(channelInfo.id);
                 }                    
@@ -148,7 +187,10 @@ public class ShipSDClient : MonoBehaviour
             
         }
         //============================================================//
-
+        if (!GlobalData.bRunonce)
+        {            
+            GlobalData.bRunonce = true;
+        }
 
         //============================= Get Leader Info ===============================//
         JObject jstatss = jresult["result"]["gamestate"]["gamestats"] as JObject;
@@ -185,11 +227,14 @@ public class ShipSDClient : MonoBehaviour
                 GlobalData.gblockhash = ret.result.blockhash;
                 GlobalData.gblockHeight = ret.result.height;
                 GlobalData.gblockStatusStr = ret.result.state;
+                bCurrentLive = true;
                 SetGameSateFromJson(status);
+                
             }
             catch (System.Exception e)
             {
-                print(e.ToString());
+                //bCurrentLive = false;
+                print(e.ToString());                
             }
            
             
@@ -228,12 +273,14 @@ public class ShipSDClient : MonoBehaviour
         {
             Debug.Log(www.error);
             tempStr = www.error;
+            bCurrentLive = false;
         }
         else
         {
             //resultJsonStr = www.downloadHandler.text;
             GlobalData.resultJsonStr = www.downloadHandler.text;
             tempStr = www.downloadHandler.text;
+            bCurrentLive = true;
             //Debug.Log(www.downloadHandler.text);
         }
         callback(tempStr);
@@ -263,6 +310,7 @@ public class ShipSDClient : MonoBehaviour
             {
                 Debug.Log(www.error);
                 tempStr = www.error;
+                bCurrentLive = false;
                 break;
             }
             else
@@ -270,7 +318,7 @@ public class ShipSDClient : MonoBehaviour
                 //resultJsonStr = www.downloadHandler.text;
                 GlobalData.resultJsonStr = www.downloadHandler.text;
                 tempStr = www.downloadHandler.text;
-
+                bCurrentLive = true;
                 waitforchangeResult ret = JsonConvert.DeserializeObject<waitforchangeResult>(tempStr);
 
       //====       3.            ===================
@@ -318,7 +366,46 @@ public class ShipSDClient : MonoBehaviour
         return false;
     }
 
+    public void StopService()
+    {
+        StartCoroutine(StopServiceAsync());
+    }
 
+    IEnumerator StopServiceAsync()
+    {
+        string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"stop\"}";       
+        string url = GlobalData.gSettingInfo.GetShipSDUrl();
+        UnityWebRequest www = UnityWebRequest.Put(url, cmdstr);
+        www.method = UnityWebRequest.kHttpVerbPOST;
+        www.SetRequestHeader("Content-Type", "application/json"); www.SetRequestHeader("Accept", "application/json");        
+        yield return www.SendWebRequest();
+        
+    }
+    public bool KillGSP()
+    {
+        gspRunnungToggle.isOn = false;
+        try
+        {
+            foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcessesByName("shipsd"))
+            {
+                try
+                {                    
+                        p.Kill();
+                        p.WaitForExit();
+                        print("ships-sd is killed.");                     
+                }
+                catch (System.Exception e)
+                {
+                    print("Mini exception when trying to list the name " + e);
+                }
+            }
+        }
+        catch (System.Exception e)
+        {
+            print("Exception caught " + e);
+        }
+        return false;
+    }
 }
 public class channels
 {

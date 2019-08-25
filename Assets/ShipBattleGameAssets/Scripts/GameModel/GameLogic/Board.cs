@@ -156,8 +156,53 @@ namespace BattleShip.BLL.GameLogic
                         return true;
                 }
             }
-
             return false;
+        }
+        
+        public bool ValidatePositions()
+        {
+            bool bRet = true;
+            int[][] matrixShipsIndex = new int[8][];
+            for (int i = 0; i < 8; i++)
+                matrixShipsIndex[i] = new int[8];
+            for (int i = 0; i < 8; i++)
+                for (int j = 0; j < 8; j++)
+                {
+                    matrixShipsIndex[i][j] = -1;
+                    for (int sIndex = 0; sIndex < Ships.Length; sIndex++)
+                        if (Ships[sIndex].BoardPositions.Contains(new Coordinate(i + 1, j + 1)))
+                            matrixShipsIndex[i][j] = sIndex;
+                }
+            UnityEngine.Debug.Log(matrixShipsIndex);
+            for (int i = 0; i < 8; i++)
+                for (int j = 0; j < 8; j++)
+                {
+                    
+                    if(matrixShipsIndex[i][j]>0)
+                    {
+                        //near other ships exist?
+                        for(int ii=i-1;ii<=i+1;ii++)
+                            for(int jj=j-1;jj<=j+1;jj++)
+                            {
+                                if (ii < 0 || jj < 0 || ii > 7 || jj > 7) continue;
+                                if(matrixShipsIndex[ii][jj]>0 && matrixShipsIndex[ii][jj]!=matrixShipsIndex[i][j])
+                                {
+                                    bRet = false;
+                                }
+                            }
+                    }
+                }
+                    return bRet;
+        }
+
+        public int CountOfShips()
+        {
+            int count = 0;
+            foreach(Ship s in Ships)
+            {
+                if (s != null) count++;
+            }
+            return count;
         }
     }
 }

@@ -7,6 +7,7 @@ using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.IO;
 using BitcoinLib.RPC.RequestResponse;
+//using System.Diagnostics;
 
 using UnityEngine.UI;
 
@@ -76,6 +77,11 @@ public class GameUserManager : MonoBehaviour
     [SerializeField]
     GameObject menuObjects;
 
+    [SerializeField]
+    GameObject errorCloseBtn;
+    [SerializeField]
+    GameObject disputeGroup;
+
     void Start()
     {
         xayaClient = GetComponent<XAYAClient>();
@@ -83,7 +89,20 @@ public class GameUserManager : MonoBehaviour
         GlobalData.gErrorBox = errorPopup;
         GlobalData.gErrorText= errorText;
         GlobalData.gSettingInfo = SettingInfo.getSettingFromJson();
-        
+        //============ get user info from cookie ========================//
+        Debug.Log(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData));
+        if (File.Exists(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData) + "\\xaya\\.cookie"))
+        {
+            string cookieStr = File.ReadAllText(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData) + "\\xaya\\.cookie");
+            string[] userInfo = cookieStr.Split(':');
+            if(userInfo!=null && userInfo.Length>1)
+            {
+                GlobalData.gSettingInfo.rpcUserName = userInfo[0];
+                GlobalData.gSettingInfo.rpcUserPassword = userInfo[1];
+            }
+        }
+        //===============================================================//
+
         inputXayaURL.text = GlobalData.gSettingInfo.xayaURL;
         inputRpcUserName.text = GlobalData.gSettingInfo.rpcUserName;
         inputRpcUserPassword.text = GlobalData.gSettingInfo.rpcUserPassword;
@@ -95,10 +114,51 @@ public class GameUserManager : MonoBehaviour
             checkLocalGSP.isOn = true;
             checkLocalGSP.transform.GetChild(0).GetChild(0).gameObject.SetActive(true);
         }
+        
+        //------------- check running xayad-------------------------//
+/*        
+        bool running = false;
+        
+            try
+            {
+            foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcessesByName("xayad"))
+            {
+                running = true;
+            }
+#if UNITY_STANDALONE_LINUX
+            foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcessesByName("xaya-qt"))
+            {
+                running = true;
+            }
+            foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcessesByName("./xaya-qt"))
+            {
+                running = true;
+            }
+#endif  
+        }
+        catch
+        {
+          
+
+        }
+       
+        if (!running)
+        {
+            GlobalData.ErrorPopup("Xaya Service is not running.\nYou must run xaya and restart application.");
+            errorCloseBtn.GetComponent<Button>().onClick.AddListener(delegate {
+                UnityEngine.SceneManagement.SceneManager.UnloadScene(0);
+                Application.Quit();
+            });
+            //new WaitForSeconds(2);
+            
+        }
+        */
+        //----------------------------------------------------------//
         //---------------- Kill live Channel-----------------------------//
         GetComponent<GameChannelManager>().KillIsChannel();
-
+        
     }
+    
     public void CreateLeaderPannel(KeyValuePair<string, string> userInfo)
     {
         //int index =  .Count;
@@ -123,6 +183,8 @@ public class GameUserManager : MonoBehaviour
         GlobalData.gSettingInfo.xayaURL = inputXayaURL.text;
         GlobalData.gSettingInfo.rpcUserName = inputRpcUserName.text;
         GlobalData.gSettingInfo.rpcUserPassword = inputRpcUserPassword.text;
+        GlobalData.gSettingInfo.GSPIP = inputGSPIP.text ;
+
     }
     public void OnConnectClick()
     {
@@ -137,7 +199,9 @@ public class GameUserManager : MonoBehaviour
             Debug.Log("Connection OK");
             startUI.SetActive(false);
             userSelectUI.SetActive(true);
-            shipsdClient.GetCurrentStateAndWaiting();
+            //shipsdClient.GetCurrentStateAndWaiting();
+
+            GlobalData.gSettingInfo.SaveToJson();
 
             //GetComponent<GameChannelManager>().KillIsChannel();
         }
@@ -145,6 +209,10 @@ public class GameUserManager : MonoBehaviour
         {
             GlobalData.ErrorPopup("Xaya Server is not running!");
         }
+    }
+    public void DisplayConnectionUI()
+    {
+        startUI.SetActive(true);
     }
 
     public void OnGoBtn()
@@ -160,6 +228,27 @@ public class GameUserManager : MonoBehaviour
 
     public void OnSubmitPositions()
     {
+        
+        if (GlobalData.bPlaying)
+        {
+            ShowInfo("You already submited ship's positions.");
+        }
+        
+        if (GlobalData.gGameControl.gameMyBoard.CountOfShips()< 7)
+        {
+            ShowInfo("Some ships do not point!\nYou can't submit ship's postitions.");
+            return;
+        }
+           
+       bool bValidate=GlobalData.gGameControl.gameMyBoard.ValidatePositions();
+        if(!bValidate)
+        {
+            ShowInfo("Positions of ships do not validate!\nYou can't submit ship's postitions.");
+            return;
+        }
+        Debug.Log(bValidate);
+        //GlobalData.ErrorPopup(bValidate.ToString());
+
         GetComponent<GameChannelManager>().SetShipPostionSubmit();
     }
 
@@ -239,15 +328,14 @@ public class GameUserManager : MonoBehaviour
         Debug.Log(GlobalData.bOpenedChannel);
         //if (GlobalData.bOpenedChannel) return;
         GlobalData.gcurrentPlayedChannedId = channelId;
+
         GetComponent<GameChannelManager>().RunChannelService(channelId);
         //WaitForSeconds w= new WaitForSeconds(2)
-
-       
+               
         GetComponent<GameChannelManager>().StartChannelWaiting(channelId);
 
         m_gamePlayboard.SetActive(false);
-        m_gamePlayboard.SetActive(true);
-        
+        m_gamePlayboard.SetActive(true);        
         ShowInfo("START GAME.\n ARRANGE YOUR SHIPS!");
 
     }
@@ -375,5 +463,20 @@ public class GameUserManager : MonoBehaviour
     public bool IsExistName(string namestr)
     {
         return m_userNameList.Contains(namestr);
+    }
+    public void DisputeDisplay(bool bShow=true)
+    {
+        if (bShow)
+        {
+            disputeGroup.SetActive(false);
+            disputeGroup.SetActive(true);
+        }
+        else
+            disputeGroup.SetActive(false);
+    }
+    public void OnDisputeBtn()
+    {
+        ShowInfo("You started a dispute!");
+        GetComponent<GameChannelManager>().DisputeRequest();
     }
 }

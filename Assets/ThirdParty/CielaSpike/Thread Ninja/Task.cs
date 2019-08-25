@@ -257,7 +257,7 @@ namespace CielaSpike
             {
                 // exception handling, save & log it;
                 this.Exception = ex;
-                Debug.LogError(string.Format("{0}\n{1}", ex.Message, ex.StackTrace));
+                Debug.Log(string.Format("{0}\n{1}", ex.Message, ex.StackTrace));
                 // then terminates the task;
                 GotoState(RunningState.Error);
             }
