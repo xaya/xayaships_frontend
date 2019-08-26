@@ -1,0 +1,36 @@
+2019-08-06T09:49:45Z 
+
+
+
+
+2019-08-06T09:49:45Z Xaya version v1.2.2.0-c894446fb (release build)
+2019-08-06T09:49:45Z Assuming ancestors of block e685ccaa62025c5c5075cfee80e498589bd4788614dcbe397e12bf2b8e887e47 have valid signatures.
+2019-08-06T09:49:45Z Setting nMinimumChainWork=0000000000000000000000000000000000000000000f469d71a33ceda65de424
+2019-08-06T09:49:45Z Using the 'sse4(1way),sse41(4way),avx2(8way)' SHA256 implementation
+2019-08-06T09:49:45Z Using RdRand as an additional entropy source
+2019-08-06T09:49:45Z Default data directory C:\Users\pik1\AppData\Roaming\Xaya
+2019-08-06T09:49:45Z Using data directory C:\Users\pik1\AppData\Roaming\Xaya
+2019-08-06T09:49:45Z Config file: C:\Users\pik1\AppData\Roaming\Xaya\xaya.conf
+2019-08-06T09:49:45Z Using at most 125 automatic connections (2048 file descriptors available)
+2019-08-06T09:49:45Z Using 16 MiB out of 32/2 requested for signature cache, able to store 524288 elements
+2019-08-06T09:49:45Z Using 16 MiB out of 32/2 requested for script execution cache, able to store 524288 elements
+2019-08-06T09:49:45Z Using 2 threads for script verification
+2019-08-06T09:49:45Z scheduler thread start
+2019-08-06T09:49:45Z WARNING: option -rpcallowip was specified without -rpcbind; this doesn't usually make sense
+2019-08-06T09:49:45Z HTTP: creating work queue of depth 16
+2019-08-06T09:49:45Z Config options rpcuser and rpcpassword will soon be deprecated. Locally-run instances may remove rpcuser to use cookie-based auth, or may be replaced with rpcauth. Please see share/rpcauth for rpcauth auth generation.
+2019-08-06T09:49:45Z HTTP: starting 4 worker threads
+2019-08-06T09:49:45Z Using wallet directory C:\Users\pik1\AppData\Roaming\Xaya\wallets
+2019-08-06T09:49:45Z init message: Verifying wallet(s)...
+2019-08-06T09:49:45Z Using BerkeleyDB version Berkeley DB 4.8.30: (April  9, 2010)
+2019-08-06T09:49:45Z Using wallet C:\Users\pik1\AppData\Roaming\Xaya\wallets\game.dat
+2019-08-06T09:49:45Z BerkeleyEnvironment::Open: LogDir=C:\Users\pik1\AppData\Roaming\Xaya\wallets\game.dat\database ErrorFile=C:\Users\pik1\AppData\Roaming\Xaya\wallets\game.dat\db.log
+2019-08-06T09:49:45Z init message: Loading banlist...
+2019-08-06T09:49:45Z Cache configuration:
+2019-08-06T09:49:45Z * Using 2.0 MiB for block index database
+2019-08-06T09:49:45Z * Using 8.0 MiB for chain state database
+2019-08-06T09:49:45Z * Using 440.0 MiB for in-memory UTXO set (plus up to 286.1 MiB of unused mempool space)
+2019-08-06T09:49:45Z init message: Loading block index...
+2019-08-06T09:49:45Z Opening LevelDB in C:\Users\pik1\AppData\Roaming\Xaya\blocks\index
+2019-08-06T09:49:45Z Opened LevelDB successfully
+2019-08-06T09:49:45Z Using obfuscation key for C:\Users\pik1\AppData\Roaming\Xaya\blocks\index: 0000000000000000
