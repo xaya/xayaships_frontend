@@ -57,11 +57,10 @@ public class GameChannelManager : MonoBehaviour
 
         //KillIsChannel();
 
-
         string channelServiceExePath = Application.streamingAssetsPath + "/shipsd/ships-channel.exe";      
         string channelServiceStr = " --xaya_rpc_url=\"" + GlobalData.gSettingInfo.GetServerUrl() + "\" --gsp_rpc_url=\"" +
-            GlobalData.gSettingInfo.GSPIP + "\" --broadcast_rpc_url=\"http://seeder.xaya.io:10042\" --rpc_port=\"" + "29060" +"\" --playername=" +
-            GlobalData.gPlayerName.Substring(2) + " --channelid=\"" + channelId + "\" -alsologtostderr";
+            GlobalData.gSettingInfo.GSPIP + "\" --broadcast_rpc_url=\"http://seeder.xaya.io:10042\" --rpc_port=\"" + "29060" +"\" --playername=\"" +
+            GlobalData.gPlayerName.Substring(2) + "\" --channelid=\"" + channelId + "\" -alsologtostderr";
 
         channelServiceStr += " --v=1";
 
@@ -578,7 +577,7 @@ public void GetCurrentStateOnly(string channelId)
         www.SendWebRequest();        
         //yield return Ninja.JumpToUnity;
         Debug.Log("channelForce stop-final-time:" + Time.timeSinceLevelLoad);
-        new WaitForSeconds(0.01f);
+        new WaitForSeconds(0.05f);
         GlobalData.bLiveChannel = false;
     }
     public void SetShipPostionSubmit()

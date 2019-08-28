@@ -54,8 +54,8 @@ public class ChannelDeamonManager : MonoBehaviour
         yield return Ninja.JumpToUnity;
         string channelServiceExePath = Application.streamingAssetsPath + "/shipsd/ships-channel.exe";
         string channelServiceStr = " --xaya_rpc_url=\"" + GlobalData.gSettingInfo.GetServerUrl() + "\" --gsp_rpc_url=\"" +
-            GlobalData.gSettingInfo.GSPIP + "\" --broadcast_rpc_url=\"http://seeder.xaya.io:10042\" --rpc_port=\"" + "29060" + "\" --playername=" +
-            GlobalData.gPlayerName.Substring(2) + " --channelid=\"" + channelId + "\" -alsologtostderr";
+            GlobalData.gSettingInfo.GSPIP + "\" --broadcast_rpc_url=\"http://seeder.xaya.io:10042\" --rpc_port=\"" + "29060" + "\" --playername=\"" +
+            GlobalData.gPlayerName.Substring(2) + "\" --channelid=\"" + channelId + "\" -alsologtostderr";
         channelServiceStr += " --v=1";
 
         //=================================================================================================================//
