@@ -170,15 +170,16 @@ public class ShipSDClient : MonoBehaviour
                     if (!GlobalData.bLiveChannel && !GlobalData.IsIgnoreChannel(channelInfo.id))
                     {
                         GlobalData.bOpenedChannel = true;
-                        //if (!GlobalData.bLogin)
-                        //    GlobalData.gcurrentPlayedChannedId = channelInfo.id;                  
-                        //else
+                        //============= Create  Channe
                         GetComponent<GameUserManager>().StartGameByChannel(channelInfo.id);
                         //case menu is active, collapse  menu 
                         GetComponent<GameUserManager>().InitMenu();
+                        GlobalData.InitGameChannelData();
+
                         GlobalData.bLiveChannel = true;
                         GlobalData.bFinished = false;
                         GlobalData.bPlaying = false;
+                        
                     }
                     //Debug.Log(channelInfo.id);
                 }                    
