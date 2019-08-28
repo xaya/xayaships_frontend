@@ -34,16 +34,14 @@ public class XAYAClient : MonoBehaviour
     public bool Connect()
     {
         xayaService = new XAYAService("http://"+GlobalData.gSettingInfo.xayaURL, GlobalData.gSettingInfo.rpcUserName,GlobalData.gSettingInfo.rpcUserPassword, "", 10);
-        
+    
         if (xayaService.GetConnectionCount() > 0)
         {
             // We are not tracking connection drops or anything
             // here for the same of simplicity.We just assume
             // that once we are connected, then we are always fine.
 
-            //connector.SubscribeForBlockUpdates();
-            
-            
+           //connector.SubscribeForBlockUpdates();
            connected = true;
            return true;
         }
