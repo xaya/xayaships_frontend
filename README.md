@@ -27,3 +27,7 @@ which prove he lost.</span></p>
 <p><span style="font-weight: 400;">In all, a complex and real-time game 
 can be played in a trustless, decentralised, provably fair way with 
 little transaction fees and massively reducing blockchain bloat.</span></p>
+
+#Dependency Sites
+[Xaya](https://xaya.io)
+[XayaShips Game](https://xaya.io/xayaships/)
