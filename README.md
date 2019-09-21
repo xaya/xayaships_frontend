@@ -30,6 +30,6 @@ little transaction fees and massively reducing blockchain bloat.</span></p>
 
 #Dependency Sites
 <br/>
-[Xaya](https://xaya.io)
+&nbsp;&nbsp;[Xaya](https://xaya.io)
 <br/>
-[XayaShips Game](https://xaya.io/xayaships/)
+&nbsp;&nbsp;[XayaShips Game](https://xaya.io/xayaships/)
