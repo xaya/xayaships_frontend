@@ -28,7 +28,7 @@ which prove he lost.</span></p>
 can be played in a trustless, decentralised, provably fair way with 
 little transaction fees and massively reducing blockchain bloat.</span></p>
 
-#Dependency Sites
+Dependency Sites
 <br/>
 &nbsp;&nbsp;[ - Xaya](https://xaya.io)
 <br/>
