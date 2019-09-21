@@ -29,5 +29,7 @@ can be played in a trustless, decentralised, provably fair way with
 little transaction fees and massively reducing blockchain bloat.</span></p>
 
 #Dependency Sites
-Xaya [Xaya](https://xaya.io)
-XayaShips [XayaShips Game](https://xaya.io/xayaships/)
+#-
+[Xaya](https://xaya.io)
+#-
+[XayaShips Game](https://xaya.io/xayaships/)
