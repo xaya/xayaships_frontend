@@ -60,18 +60,30 @@ public class ShipSDClient : MonoBehaviour
         GetComponent<GameUserManager>().UpdateSettingInfo();
 
         if (shipsdPathBackfix == null || shipsdPathPrefix == null) return;
-        string strShipSDPath = shipsdPathPrefix.text + GlobalData.gSettingInfo.rpcUserName + ":" + GlobalData.gSettingInfo.rpcUserPassword + "@"+ GlobalData.gSettingInfo.xayaURL+"\" --game_rpc_port="+29050+ shipsdPathBackfix.text;
-        strCmdText = Application.streamingAssetsPath+ "/" + strShipSDPath;
-        //strCmdText+= " -log_dir=\"datadir\" --v=1";
 
+        string strShipSDPath = shipsdPathPrefix.text + GlobalData.gSettingInfo.rpcUserName + ":" + GlobalData.gSettingInfo.rpcUserPassword + "@"+ GlobalData.gSettingInfo.xayaURL+"\" --game_rpc_port="+29050+ shipsdPathBackfix.text;
+        //------  run bat file -----//
+        
+        strCmdText ="\""+ Application.streamingAssetsPath+ "/shipsd/shipsd.exe\"" + strShipSDPath;
+        //strCmdText+= " -log_dir=\"datadir\" --v=1";
         strCmdText += " --v=1";
+
+        string workingDir = Application.streamingAssetsPath + "/shipsd";
+        strCmdText = "shipsd.exe " + strShipSDPath;
+        Debug.Log(strCmdText);
+
+        //-------runnning bat file  for test ------//
+        //strCmdText ="\""+ Application.streamingAssetsPath + "/shipsd/" + "shipsdrun.bat\" " + GlobalData.gSettingInfo.rpcUserName + ":" + GlobalData.gSettingInfo.rpcUserPassword + "@" + GlobalData.gSettingInfo.xayaURL;
+        //------------------------//
         string envPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
         //Debug.Log(envPath);
         string strLinuxParams= " shipsd --xaya_rpc_url=\"http://"+ GlobalData.gSettingInfo.rpcUserName + ":" +GlobalData.gSettingInfo.rpcUserPassword + "@"+GlobalData.gSettingInfo.xayaURL+"\" --game_rpc_port=29050 --datadir=\""+envPath+"/.xayagame\" -alsologtostderr --v=1";
 
+        print(strCmdText);
         //System.Diagnostics.Process.Start("cmd.exe", "/c " +strCmdText); //Start cmd process
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR
-           XAYABitcoinLib.Utils.StartService("cmd.exe", "/c" + strCmdText);
+        XAYABitcoinLib.Utils.StartService2(workingDir, "cmd.exe", "/c " + strCmdText);
+        //XAYABitcoinLib.Utils.StartService("cmd.exe", "\"/c\" " + strCmdText);
 #else
         XAYABitcoinLib.Utils.StartService("/bin/bash", "-c '" + strLinuxParams+"'");
         
@@ -88,10 +100,9 @@ public class ShipSDClient : MonoBehaviour
         string cmdstr= "{\"jsonrpc\":\"2.0\", \"method\":\"getcurrentstate\", \"id\":0}";
 
         StartCoroutine(shipsdRpcCommand(cmdstr, (status) => {
-            //JObject jsonObject = JObject.Parse(status);            
-            //print(status);
+            //JObject jsonObject = JObject.Parse(status);                    
             retStatusJson ret = JsonConvert.DeserializeObject<retStatusJson>(status);
-            //Debug.Log(ret.result.height);
+        
             //Debug.Log(ret.result.blockhash);
             GlobalData.gblockhash = ret.result.blockhash;
             GlobalData.gblockHeight = ret.result.height;
@@ -137,6 +148,7 @@ public class ShipSDClient : MonoBehaviour
             {
                 channelInfo.userNames[index++] = j["name"].ToString();
             }
+
             if(!GlobalData.bRunonce && a.Count>1)
             {
                 channelInfo.bignored = true;
@@ -147,8 +159,7 @@ public class ShipSDClient : MonoBehaviour
             GlobalData.AddChannel(channelInfo);
 
             if (a.Count == 1) GlobalData.ggameLobbyChannelList.Add(channelInfo);
-
-
+            
             if (!GlobalData.bLogin) continue;
 
             
@@ -167,8 +178,9 @@ public class ShipSDClient : MonoBehaviour
                 if(!GetComponent<GameUserManager>().IsExistName("p/"+opponentName))    //=== case  only other user====//
                 {
                     Debug.Log("liveFlag:" + GlobalData.bLiveChannel);
-                    if (!GlobalData.bLiveChannel && !GlobalData.IsIgnoreChannel(channelInfo.id))
-                    {
+                      if (!GlobalData.bLiveChannel && !GlobalData.IsIgnoreChannel(channelInfo.id))
+                    //   if (!GlobalData.bLiveChannel)
+                        {
                         GlobalData.bOpenedChannel = true;
                         //============= Create  Channe
                         GetComponent<GameUserManager>().StartGameByChannel(channelInfo.id);
@@ -234,6 +246,8 @@ public class ShipSDClient : MonoBehaviour
             }
             catch (System.Exception e)
             {
+
+
                 //bCurrentLive = false;
                 print(e.ToString());                
             }
@@ -294,8 +308,7 @@ public class ShipSDClient : MonoBehaviour
         //string requestJsonStr=;
         string requestJsonStr;
         
-        while (true)
-        {         
+        while (true){         
 
             requestJsonStr = "{\"jsonrpc\":\"2.0\", \"method\":\"waitforchange\", \"params\":[\"" + blockhash + "\"],\"id\":0}";
             //----------2, waitforchange===============//
@@ -312,7 +325,7 @@ public class ShipSDClient : MonoBehaviour
                 Debug.Log(www.error);
                 tempStr = www.error;
                 bCurrentLive = false;
-                break;
+                //break;
             }
             else
             {
@@ -324,6 +337,7 @@ public class ShipSDClient : MonoBehaviour
 
       //====       3.            ===================
                 blockhash = ret.result;
+                Debug.Log("wait:" + blockhash);
                 //4. call getcurentstate again ====================//
                 if (blockhash != GlobalData.gblockhash)
                 {
@@ -352,6 +366,11 @@ public class ShipSDClient : MonoBehaviour
                         //print("shipsd is already locally running.");
                         return true;
                     }
+                    if (p.ProcessName == "shipsdrun")
+                    {
+                        //print("shipsd is already locally running.");
+                        return true;
+                    }
                     //print(p.ToString());
                 }
                 catch (System.Exception e)
@@ -376,10 +395,21 @@ public class ShipSDClient : MonoBehaviour
     {
         string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"stop\"}";       
         string url = GlobalData.gSettingInfo.GetShipSDUrl();
-        UnityWebRequest www = UnityWebRequest.Put(url, cmdstr);
-        www.method = UnityWebRequest.kHttpVerbPOST;
-        www.SetRequestHeader("Content-Type", "application/json"); www.SetRequestHeader("Accept", "application/json");        
-        yield return www.SendWebRequest();
+        Debug.Log(url);
+        UnityWebRequest www=null;
+        try
+        {
+            www = UnityWebRequest.Put(url, cmdstr);
+            www.method = UnityWebRequest.kHttpVerbPOST;
+            www.SetRequestHeader("Content-Type", "application/json"); www.SetRequestHeader("Accept", "application/json");            
+        }
+        catch
+        {
+            print(GlobalData.gSettingInfo.GetShipSDUrl());
+        }
+
+        if(www!=null)
+            yield return www.SendWebRequest();
         
     }
     public bool KillGSP()

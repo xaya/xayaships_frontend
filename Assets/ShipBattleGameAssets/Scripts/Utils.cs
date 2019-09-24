@@ -119,6 +119,34 @@ namespace XAYABitcoinLib
             }
         }
 
-       
+        public static bool StartService2( string workingDir, string cmdPath, string argStr, bool bHidden = false)
+        {
+
+            // bool bRet = false;
+            //------------------------------------------------------//
+
+            try
+            {
+                System.Diagnostics.Process myProcess = new System.Diagnostics.Process();
+                myProcess.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Minimized;
+                myProcess.StartInfo.WorkingDirectory = workingDir;
+                myProcess.StartInfo.CreateNoWindow = bHidden;
+                myProcess.StartInfo.UseShellExecute = false;
+                myProcess.StartInfo.RedirectStandardOutput = true;
+                myProcess.StartInfo.FileName = cmdPath;
+                myProcess.StartInfo.Arguments = argStr;
+                myProcess.EnableRaisingEvents = true;
+                return myProcess.Start();
+                //myProcess.WaitForExit();
+                //int ExitCode = myProcess.ExitCode;
+                //print(ExitCode);
+            }
+            catch (System.IO.IOException e)
+            {
+                Debug.Log(e);
+                return false;
+            }
+        }
+
     }
 }

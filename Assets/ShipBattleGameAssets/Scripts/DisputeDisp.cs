@@ -64,7 +64,7 @@ public class DisputeDisp : MonoBehaviour
                 blocks[i].SetActive(false);
             }
             remainHeightText.text = "";
-            issuserText.text = "";
+            if (issuserText != null) issuserText.text = "";
             heightText.text = "BLOCK HEIGHT:";
             disputePopup.SetActive(false);
         }

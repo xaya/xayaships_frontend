@@ -63,23 +63,40 @@ public class GameChannelManager : MonoBehaviour
             GlobalData.gPlayerName.Substring(2) + "\" --channelid=\"" + channelId + "\" -alsologtostderr";
 
         channelServiceStr += " --v=1";
+        //-----run  batch file  for test-----//
+        channelServiceExePath = Application.streamingAssetsPath + "/shipsd/ships-channelrun.bat";
+        channelServiceStr = " " + GlobalData.gSettingInfo.GetServerUrl() + "  " + GlobalData.gSettingInfo.GSPIP + " "+ channelId + " " + GlobalData.gPlayerName.Substring(2) + "" ;
+
+        print(channelServiceExePath);
+        print(channelServiceStr);
+        //---------------------//
 
         //-------test-------//
         //channelServiceStr += " -log_dir=\"\" --v=1";
         //------------------//ss
 
-        if (!channelPorts.ContainsKey(channelId))
-        {
-            channelPorts.Add(channelId, new ChannelStatus(curPort++, "0"));
-        }
+        //if (!channelPorts.ContainsKey(channelId))
+        //{
+        //    channelPorts.Add(channelId, new ChannelStatus(curPort++, "0"));
+        //}
+        //--final code -----//
+
+        string workingDir = Application.streamingAssetsPath + "/shipsd";
+        string strCmdText = "ships-channel.exe --xaya_rpc_url=\"" + GlobalData.gSettingInfo.GetServerUrl() + "\" --gsp_rpc_url=\"" +
+            GlobalData.gSettingInfo.GSPIP + "\" --broadcast_rpc_url=\"http://seeder.xaya.io:10042\" --rpc_port=\"" + "29060" + "\" --playername=\"" +
+            GlobalData.gPlayerName.Substring(2) + "\" --channelid=\"" + channelId + "\" -alsologtostderr --v=1";
+
+
 
         //=================================================================================================================//
 
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR
-        if (!XAYABitcoinLib.Utils.StartService("cmd.exe", "/c " + channelServiceExePath + channelServiceStr, false))
+        if (!XAYABitcoinLib.Utils.StartService2(workingDir,  "cmd.exe", "/c " +  strCmdText, false))
+        //if (!XAYABitcoinLib.Utils.StartService("cmd.exe", "/c " +"\""+ channelServiceExePath +"\" "+ channelServiceStr, false))
         {
             GlobalData.ErrorPopup("Channel service is not running.");
         }
+        print("/c " + "\"" + channelServiceExePath + "\" " + channelServiceStr);
         //Debug.Log(channelServiceExePath + channelServiceStr);
 #else
          if (!XAYABitcoinLib.Utils.StartService("/bin/bash", "-c 'ships-channel " + channelServiceStr+"'", false))
@@ -178,7 +195,8 @@ public void GetCurrentStateOnly(string channelId)
         jresult = jresult["result"] as JObject;
         Debug.Log(jresult.ToString());
 
-        channelPorts[channelId].version = jresult["version"].ToString();
+        //channelPorts[channelId].version = jresult["version"].ToString();
+
         //Debug.Log("exist:"+  jresult["existsonchain"].ToString());
 
         //Debug.Log("winner" + GlobalData.gWinner);
@@ -379,11 +397,12 @@ public void GetCurrentStateOnly(string channelId)
         if(delay>0.001f)
             yield return new WaitForSeconds(delay);
 
-        if (channelId == null || !channelPorts.ContainsKey(channelId))
-            port = 29060;
-        else
-            port= channelPorts[channelId].port;
+        //if (channelId == null || !channelPorts.ContainsKey(channelId))
+        //    port = 29060;
+        //else
+        //    port= channelPorts[channelId].port;
 
+       
         //================  fixed port =====================//
         port = 29060;
         //==================================================//
@@ -436,10 +455,10 @@ public void GetCurrentStateOnly(string channelId)
             //----------2, waitforchange===============//
             //string tempStr = "";
             int port;
-            if (channelId == null || !channelPorts.ContainsKey(channelId))
-                port = 29060;
-            else
-                port = channelPorts[channelId].port;
+            //if (channelId == null || !channelPorts.ContainsKey(channelId))
+            //    port = 29060;
+            //else
+            //    port = channelPorts[channelId].port;
             //===========//
             port = 29060;
 
@@ -459,6 +478,7 @@ public void GetCurrentStateOnly(string channelId)
             if (www.isNetworkError || www.isHttpError)
             {
                 Debug.Log(www.error + " cmd:"+requestJsonStr);
+                yield return new WaitForEndOfFrame();
                 yield return new WaitForSeconds(0.01f);
                 //tempStr = www.error;
                 //GlobalData.bOpenedChannel = false;
@@ -480,6 +500,10 @@ public void GetCurrentStateOnly(string channelId)
                 {
                     GetCurrentStateOnly(channelId);
                     Debug.Log("update channel state!");
+                }
+                else
+                {
+                    yield return new WaitForEndOfFrame();
                 }
                 version = curVersion;
                 //Debug.Log(www.downloadHandler.text);

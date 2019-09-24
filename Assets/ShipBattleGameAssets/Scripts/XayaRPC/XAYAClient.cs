@@ -108,7 +108,7 @@ public class XAYAClient : MonoBehaviour
     }
     public string RegisterUserName(string newName)
     {
-        string rpcCmdRegister="";
+        //string rpcCmdRegister="";
         //return rpcCmdRegister;
         //BitcoinLib.Services;
         //ICoinService iCoinService;
