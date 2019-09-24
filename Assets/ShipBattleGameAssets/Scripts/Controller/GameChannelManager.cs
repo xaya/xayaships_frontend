@@ -65,7 +65,8 @@ public class GameChannelManager : MonoBehaviour
         channelServiceStr += " --v=1";
         //-----run  batch file  for test-----//
         channelServiceExePath = Application.streamingAssetsPath + "/shipsd/ships-channelrun.bat";
-        channelServiceStr = " " + GlobalData.gSettingInfo.GetServerUrl() + "  " + GlobalData.gSettingInfo.GSPIP + " "+ channelId + " " + GlobalData.gPlayerName.Substring(2) + "" ;
+        //channelServiceStr = " " + GlobalData.gSettingInfo.GetServerUrl() + "  " + GlobalData.gSettingInfo.GSPIP + " "+ channelId + " " + GlobalData.gPlayerName.Substring(2) + "" ;
+        //channelServiceStr += " --v=1";
 
         print(channelServiceExePath);
         print(channelServiceStr);
@@ -99,7 +100,7 @@ public class GameChannelManager : MonoBehaviour
         print("/c " + "\"" + channelServiceExePath + "\" " + channelServiceStr);
         //Debug.Log(channelServiceExePath + channelServiceStr);
 #else
-         if (!XAYABitcoinLib.Utils.StartService("/bin/bash", "-c 'ships-channel " + channelServiceStr+"'", false))
+         if (!XAYABitcoinLib.Utils.StartService("/bin/bash", "-c 'ships-channel " + channelServiceStr +"'", false))
         {
             GlobalData.ErrorPopup("Channel service is not running.");
             Debug.Log("-c 'ships-channel " + channelServiceStr + "'");
@@ -478,7 +479,7 @@ public void GetCurrentStateOnly(string channelId)
             if (www.isNetworkError || www.isHttpError)
             {
                 Debug.Log(www.error + " cmd:"+requestJsonStr);
-                yield return new WaitForEndOfFrame();
+                //yield return new WaitForEndOfFrame();
                 yield return new WaitForSeconds(0.01f);
                 //tempStr = www.error;
                 //GlobalData.bOpenedChannel = false;
@@ -503,7 +504,8 @@ public void GetCurrentStateOnly(string channelId)
                 }
                 else
                 {
-                    yield return new WaitForEndOfFrame();
+                    
+                   // yield return new WaitForEndOfFrame();
                 }
                 version = curVersion;
                 //Debug.Log(www.downloadHandler.text);
