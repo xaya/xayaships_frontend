@@ -22,6 +22,7 @@ public class GameChannelManager : MonoBehaviour
     GameUserManager gameUserManager;
     //==========//
 
+	
     void Start()
     {
         xayaClient = GetComponent<XAYAClient>();

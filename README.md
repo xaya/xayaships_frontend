@@ -28,8 +28,39 @@ which prove he lost.</span></p>
 can be played in a trustless, decentralised, provably fair way with 
 little transaction fees and massively reducing blockchain bloat.</span></p>
 
-Dependency Sites
+### Dependency Sites
 <br/>
 &nbsp;&nbsp;[ - Xaya](https://xaya.io)
 <br/>
 &nbsp;&nbsp;[ - XayaShips Game](https://xaya.io/xayaships/)
+
+### Demo
+
+[Demo For Windows](xayashipsgame.zip)
+
+### Includes
+
+* Xaya RPC method
+* Use Unity smart UI 
+* Networking in Unity
+
+### Template Structure
+
+| Location             |  Content                                   |
+|----------------------|--------------------------------------------|
+| `/Assets`           | Unity Assets           |
+| `/ProjectSettings`       | Project Settings(Graphics and so on)                        |
+| `/Packages`               | Package Dependency                                  |
+
+## Prerequisites
+
+Before getting started you should have installed the following:
+
+- [X] .NET framework 4.X 
+- [X] Unity2018.4.1f
+
+## Setup
+```
+$ git clone https://github.com/xaya/xayaships_frontend
+$ cd xayaships_frontend
+```
