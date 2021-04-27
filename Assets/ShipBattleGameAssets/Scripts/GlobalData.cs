@@ -12,6 +12,13 @@ using Newtonsoft.Json;
 
 public class GlobalData : MonoBehaviour {
 
+    [HideInInspector]
+    public static string XIDServerAddress = "http://127.0.0.1:8400/"; //TODO ;; make configurable from UI
+
+    public static bool ignoreChatDebugLog = false;
+    public static string XIDAuthPassword = "";
+    public static bool isLiteMode = false;
+    public static bool xidNameIsRegistered = false;
     public static bool bPlaying = false;
     public static bool bOpenedChannel = false;
     public static bool bLogin = false;

@@ -1,2 +1,5 @@
 .vs/
 obj/
+Library/
+Packages/
+Build/

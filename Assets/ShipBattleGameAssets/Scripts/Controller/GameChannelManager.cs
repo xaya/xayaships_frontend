@@ -675,19 +675,7 @@ public void GetCurrentStateOnly(string channelId)
         string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"setposition\",\"params\":[\""+strPos+"\"]}";
 
         StartCoroutine(shipsdChannelRpcCommand(cmdstr, channelId, (status) => {
-            //JObject jsonObject = JObject.Parse(status);            
-            //print(status);
-            try
-            {
-                int nn = 0;
-                //JObject jstatus = JObject.Parse(status) as JObject;
-                //Debug.Log(jstatus.ToString());
-                //SetGameChannelSateFromJson(channelId, status);
-            }
-            catch (System.Exception e)
-            {
-                print(e.ToString());
-            }
+
 
         }));
     }

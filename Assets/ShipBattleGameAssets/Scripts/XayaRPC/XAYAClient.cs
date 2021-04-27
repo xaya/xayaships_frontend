@@ -8,6 +8,12 @@ using UnityEngine.Networking;
 using BitcoinLib.Auxiliary;
 using BitcoinLib.ExceptionHandling.Rpc;
 using BitcoinLib.Services.Coins.Base;
+using Newtonsoft.Json.Linq;
+using Newtonsoft.Json;
+using System.Net;
+using System.Text;
+using System.IO;
+using System;
 
 public class XAYAClient : MonoBehaviour 
 {
@@ -15,7 +21,6 @@ public class XAYAClient : MonoBehaviour
     // because the Game State Processor does not need to be integrated into Unity at all, 
     // and when it isn't, we need an in-house RPC implementation, e.g. this XAYAClient class.
 
-    
     public bool connected = false;
     string cmdResult;
 
@@ -58,6 +63,132 @@ public class XAYAClient : MonoBehaviour
     {
         if (xayaService == null) return 0;
         return (int)xayaService.GetBlockCount();
+    }
+
+    private string QueryXID(JObject job)
+    {
+        string requestString = JsonConvert.SerializeObject(job, Formatting.None);
+
+        string address = GlobalData.XIDServerAddress;
+        HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(address);
+        webRequest.ServicePoint.ConnectionLimit = 60;
+        webRequest.ConnectionGroupName = "xaya";
+        webRequest.ContentType = "application/json-rpc";
+        webRequest.Method = "POST";
+
+        byte[] byteArray = Encoding.UTF8.GetBytes(requestString);
+        webRequest.ContentLength = byteArray.Length;
+
+        bool networkError = false;
+        try
+        {
+            Stream dataStream = webRequest.GetRequestStream();
+            dataStream.Write(byteArray, 0, byteArray.Length);
+            dataStream.Close();
+        }
+        catch (Exception ex)
+        {
+            networkError = true;
+        }
+
+        if (networkError)
+        {
+            return "";
+        }
+
+        WebResponse webResponse = null;
+
+        try
+        {
+            webResponse = webRequest.GetResponse();
+        }
+        catch (WebException ex)
+        {
+            Debug.Log("Exception: " + ex.ToString() + "|" + requestString);
+        }
+
+        if (webResponse == null) return "";
+
+        StreamReader reader = new StreamReader(webResponse.GetResponseStream());
+        string response = reader.ReadToEnd();
+        return response;
+    }
+
+    private JObject CreateJObject(List<object> data, bool isNotification = false)
+    {
+        JObject requestObject = new JObject();
+
+        requestObject.Add(new JProperty("jsonrpc", "2.0"));
+
+        if (isNotification == false)
+        {
+            requestObject.Add(new JProperty("id", 1));
+        }
+
+        requestObject.Add(new JProperty("method", data[0]));
+
+        if (data.Count > 1)
+        {
+            requestObject.Add(new JProperty("params", data[1]));
+        }
+
+        return requestObject;
+    }
+
+    public IEnumerator XIDAuthWithWallet(string username)
+    {
+        List<object> requestData = new List<object>();
+        JObject container = new JObject();
+
+        JProperty usernameP = new JProperty("name", username);
+        JProperty applicationP = new JProperty("application", "chat.xaya.io");
+        JProperty dataP = new JProperty("data", new JObject());
+
+        container.Add(usernameP);
+        container.Add(applicationP);
+        container.Add(dataP);
+
+        requestData.Add("authwithwallet");
+        requestData.Add(container);
+
+        string result = "";
+
+        try
+        {
+            result = this.QueryXID(this.CreateJObject(requestData));
+        }
+        catch (WebException ex)
+        {
+
+        }
+
+        yield return result;
+    }
+
+    public PlayerXID XIDNameState(string playerName)
+    {
+        List<object> requestData = new List<object>();
+        JObject container = new JObject();
+        JProperty player_id = new JProperty("name", playerName);
+        container.Add(player_id);
+        PlayerXID PlayerStats = null;
+
+        requestData.Add("getnamestate");
+        requestData.Add(container);
+
+        string result = "";
+
+        try
+        {
+            result = this.QueryXID(this.CreateJObject(requestData));
+            PlayerStats = JsonConvert.DeserializeObject<PlayerXID>(result);
+        }
+        catch (WebException ex)
+        {
+
+        }
+
+        return PlayerStats;
     }
 
     public List<string> GetNameList()
@@ -173,9 +304,9 @@ public class XAYAClient : MonoBehaviour
        
         return cmdResult;
     }
-    public string GetNewAddress(string userName)
+    public string GetNewAddress(string userName, string address = "")
     {
-        return xayaService.GetNewAddress(GlobalData.gPlayerName);
+        return xayaService.GetNewAddress(GlobalData.gPlayerName, address);
         //return xayaService.GetAccountAddress(userName);
     }
     public string NameUpdate(string playerName, string Value)

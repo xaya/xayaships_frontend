@@ -10,13 +10,131 @@ using BitcoinLib.RPC.RequestResponse;
 //using System.Diagnostics;
 
 using UnityEngine.UI;
+using System.Text.RegularExpressions;
+using System.Text;
+using System.Diagnostics;
+
+public class PlayerXIDSIgner
+{
+    [JsonProperty("addresses")]
+    public List<string> addresses { get; set; }
+}
+
+public class PlayerXIDData
+{
+    [JsonProperty("addresses")]
+    public Dictionary<string, string> addresses { get; set; }
+
+    [JsonProperty("name")]
+    public string name { get; set; }
+
+    [JsonProperty("signers")]
+    public List<PlayerXIDSIgner> signers { get; set; }
+}
+
+public class PlayerXIDResult
+{
+    [JsonProperty("blockhash")]
+    public string blockhash { get; set; }
+
+    [JsonProperty("chain")]
+    public string chain { get; set; }
+
+    [JsonProperty("gameid")]
+    public string gameid { get; set; }
+
+    [JsonProperty("state")]
+    public string state { get; set; }
+
+    [JsonProperty("height")]
+    public int height { get; set; }
+
+    [JsonProperty("data")]
+    public PlayerXIDData data { get; set; }
+
+}
+
+public class PlayerXID
+{
+    [JsonProperty("id")]
+    public int id { get; set; }
+
+    [JsonProperty("jsonrpc")]
+    public string jsonrpc { get; set; }
+
+    [JsonProperty("result")]
+    public PlayerXIDResult result { get; set; }
+}
+
+public class HexadecimalEncoding
+{
+    public static string ToHexString(string str)
+    {
+        Regex regex = new Regex("^[A-z0-9]+$");
+        Match match = regex.Match(str);
+
+        if (match.Success)
+        {
+            if (str.ToLower() == str)
+            {
+                return str;
+            }
+        }
+
+        var sb = new StringBuilder();
+
+        var bytes = Encoding.UTF8.GetBytes(str);
+        foreach (var t in bytes)
+        {
+            if (t.ToString("X2") != "00")
+            {
+                sb.Append(t.ToString("X2"));
+            }
+        }
+
+        return "x-" + sb.ToString();
+    }
+
+    public static string FromHexString(string hexString)
+    {
+        if (hexString.Contains("x-"))
+        {
+            hexString = hexString.Replace("x-", "");
+        }
+        else
+        {
+            return hexString;
+        }
+
+        try
+        {
+            var bytes = new byte[hexString.Length / 2];
+            for (var i = 0; i < bytes.Length; i++)
+            {
+                bytes[i] = Convert.ToByte(hexString.Substring(i * 2, 2), 16);
+            }
+
+            return Encoding.UTF8.GetString(bytes); // returns: "Hello world" for "48656C6C6F20776F726C64"
+        }
+        catch
+        {
+            return hexString;
+        }
+    }
+}
+
 
 public class GameUserManager : MonoBehaviour
 {
     // Start is called before the first frame update
     List<string> m_userNameList;
     Dictionary<string, string> m_userNameAndValues;
-    XAYAClient xayaClient;
+
+    [HideInInspector]
+    public XAYAClient xayaClient;
+
+    public UIManagerChat managerChat;
+
     [SerializeField]
     UnityEngine.UI.Text m_uiBalanceText = null;
     [SerializeField]
@@ -82,15 +200,30 @@ public class GameUserManager : MonoBehaviour
     [SerializeField]
     GameObject disputeGroup;
 
+    public static GameUserManager Instance;
+
+    private bool retryChatEnumConection = false;
+    private Process myProcessDaemonCharon;
+
+    private void OnDestroy()
+    {
+        if(myProcessDaemonCharon != null)
+        {
+            myProcessDaemonCharon.Kill();
+        }
+    }
+
     void Start()
     {
+        Instance = this;
+
         xayaClient = GetComponent<XAYAClient>();
         shipsdClient = GetComponent<ShipSDClient>();
         GlobalData.gErrorBox = errorPopup;
         GlobalData.gErrorText= errorText;
         GlobalData.gSettingInfo = SettingInfo.getSettingFromJson();
         //============ get user info from cookie ========================//
-        Debug.Log(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData));
+        UnityEngine.Debug.Log(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData));
         if (File.Exists(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData) + "\\xaya\\.cookie"))
         {
             string cookieStr = File.ReadAllText(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData) + "\\xaya\\.cookie");
@@ -196,7 +329,7 @@ public class GameUserManager : MonoBehaviour
 
         if (ConnectClient())
         {
-            Debug.Log("Connection OK");
+            UnityEngine.Debug.Log("Connection OK");
             startUI.SetActive(false);
             userSelectUI.SetActive(true);
             //shipsdClient.GetCurrentStateAndWaiting();
@@ -215,15 +348,147 @@ public class GameUserManager : MonoBehaviour
         startUI.SetActive(true);
     }
 
-    public void OnGoBtn()
+    IEnumerator LaunchXMPPServer()
     {
+        string username = userSelectDropdown.captionText.text.Replace("p/", "");
+        CoroutineWithData<string> coroutine = null;
+
+        if (GlobalData.isLiteMode == false)
+        {
+            AsynchroniousRequests request = new AsynchroniousRequests();
+            coroutine = new CoroutineWithData<string>(request.AuthWithWallet(username, this), this);
+            yield return coroutine.Coroutine; while (coroutine.result == null) { yield return new WaitForEndOfFrame(); }
+            yield return new WaitForSeconds(0.5f);
+        }
+
+        if (coroutine != null && coroutine.result == "Call failed")
+        {
+            GlobalData.ErrorPopup("Error authenticating. Do you have XID name registered in XAYA wallet?");
+        }
+        else
+        {
+            string password = "";
+            if (GlobalData.isLiteMode == true)
+            {
+                password = GlobalData.XIDAuthPassword;
+            }
+            else
+            {
+                try
+                {
+                    JObject result = JObject.Parse(coroutine.result);
+                    password = result["result"]["data"].ToString();
+                }
+                catch
+                {
+                    retryChatEnumConection = true;
+                }
+            }
+
+            if (retryChatEnumConection == false)
+            {
+                string ourXIDpassword = password;
+                string ourXIDLogin = HexadecimalEncoding.ToHexString(username) + "@chat.xaya.io";
+
+                //ready to launch broadcaster
+
+                string userDirPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+                string workingDir = userDirPath + "/Electrum-CHI";
+
+                myProcessDaemonCharon = new Process();
+                myProcessDaemonCharon.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                myProcessDaemonCharon.StartInfo.CreateNoWindow = true;
+                myProcessDaemonCharon.StartInfo.UseShellExecute = false;
+                myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--game_id \"xs\" --jid " + ourXIDLogin + " --password " + ourXIDpassword + " --muc \"muc.chat.xaya.io\" --port 10042");
+
+                myProcessDaemonCharon.StartInfo.FileName = Application.dataPath + "/StreamingAssets/shipsd/xmpp-broadcast-rpc-server.exe";
+                myProcessDaemonCharon.StartInfo.WorkingDirectory = workingDir;
+                myProcessDaemonCharon.EnableRaisingEvents = true;
+
+                myProcessDaemonCharon.Start();
+
+                string encodeduser = HexadecimalEncoding.ToHexString(username).ToLower();
+
+                // Set values in UserDetails class
+                managerChat.userDetailsModel.username = encodeduser;
+                managerChat.userDetailsModel.password = password;
+
+                XMPPConnection.Instance.Connect(encodeduser, password);
+            }
+        }
+
+        
         GlobalData.gPlayerName = userSelectDropdown.captionText.text;
         m_uiBalanceText.text = inputBalance.text;
         GameChannelManager channelManager = GetComponent<GameChannelManager>();        
 
         userSelectUI.SetActive(false);
-        GlobalData.bLogin = true;       
-                
+        GlobalData.bLogin = true;
+    }
+
+
+    IEnumerator WaitForXIDToSolve()
+    {
+        bool xIDResolved = false;
+
+        GlobalData.ErrorPopup("Registering XID, close this message as wait until game goes to next screen automatically");
+
+        while (xIDResolved == false)
+        {
+            string username = userSelectDropdown.captionText.text.Replace("p/", "");
+            PlayerXID nameData = xayaClient.XIDNameState(username);
+
+            if (nameData == null || (nameData.result.data.addresses.Count == 0 && nameData.result.data.signers.Count == 0))
+            {
+            }
+            else
+            {
+                GlobalData.xidNameIsRegistered = true;
+                xIDResolved = true;
+                StartCoroutine(LaunchXMPPServer());
+            }
+
+            yield return new WaitForSeconds(1.5f);
+        }
+
+        yield return null;
+    }
+
+
+    IEnumerator TestIfXIDNamePresent()
+    {
+        yield return null;
+
+        try
+        {
+            string username = userSelectDropdown.captionText.text;
+            PlayerXID nameData = xayaClient.XIDNameState(username.Replace("p/",""));
+
+            if (nameData == null || (nameData.result.data.addresses.Count == 0 && nameData.result.data.signers.Count == 0))
+            {
+                GlobalData.xidNameIsRegistered = false;
+                string newAddresss = xayaClient.GetNewAddress("", "legacy");
+
+                xayaClient.NameUpdate(username, "{\"g\":{\"id\":{\"s\":{\"g\":[\"" + newAddresss + "\"]}}}}");
+                StartCoroutine(WaitForXIDToSolve());
+            }
+            else
+            {
+                GlobalData.xidNameIsRegistered = true;
+                StartCoroutine(LaunchXMPPServer());
+            }
+        }
+        catch (Exception ex)
+        {
+            GlobalData.ErrorPopup(ex.ToString());
+        }
+
+        yield return null;
+    }
+
+    public void OnGoBtn()
+    {
+        StartCoroutine(TestIfXIDNamePresent());
     }
 
     public void OnSubmitPositions()
@@ -246,7 +511,7 @@ public class GameUserManager : MonoBehaviour
             ShowInfo("Positions of ships do not validate!\nYou can't submit ship's postitions.");
             return;
         }
-        Debug.Log(bValidate);
+        UnityEngine.Debug.Log(bValidate);
         //GlobalData.ErrorPopup(bValidate.ToString());
 
         GetComponent<GameChannelManager>().SetShipPostionSubmit();
@@ -282,7 +547,7 @@ public class GameUserManager : MonoBehaviour
         var responseObject = new NameRegisterResult();
         
         JsonConvert.PopulateObject(responsestr, responseObject);
-        Debug.Log(responsestr);
+        UnityEngine.Debug.Log(responsestr);
 
         
         if(responseObject.error!=null)
@@ -325,7 +590,7 @@ public class GameUserManager : MonoBehaviour
     public void StartGameByChannel(string channelId)
     {
 
-        Debug.Log(GlobalData.bOpenedChannel);
+        UnityEngine.Debug.Log(GlobalData.bOpenedChannel);
         //if (GlobalData.bOpenedChannel) return;
         GlobalData.gcurrentPlayedChannedId = channelId;
 
@@ -356,7 +621,7 @@ public class GameUserManager : MonoBehaviour
 
         if (www.isNetworkError || www.isHttpError)
         {
-            Debug.Log(www.error);
+            UnityEngine.Debug.Log(www.error);
             tempStr = www.error;
         }
         else
@@ -364,7 +629,7 @@ public class GameUserManager : MonoBehaviour
             //resultJsonStr = www.downloadHandler.text;
             GlobalData.resultJsonStr = www.downloadHandler.text;
             tempStr = www.downloadHandler.text;
-            Debug.Log(www.downloadHandler.text);
+            UnityEngine.Debug.Log(www.downloadHandler.text);
         }
         callback(tempStr);
     }
