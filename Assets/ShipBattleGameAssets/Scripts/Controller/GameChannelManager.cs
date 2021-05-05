@@ -4,28 +4,24 @@ using UnityEngine;
 using UnityEngine.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using BattleShip.BLL.GameLogic;
-using BattleShip.BLL.Ships;
-using BattleShip.BLL.Responses;
+using XAYA;
 
 public class GameChannelManager : MonoBehaviour
 {
     // Start is called before the first frame update
-    XAYAClient xayaClient;
     Dictionary<string, ChannelStatus> channelPorts;
 
+    RPCRequest request;
     public GameShootManager gameShootManager;
     public GameShootManager ourBoardManager;
     public ChannelDeamonManager channelDeamon;
-    int curPort = 29060;
-
     GameUserManager gameUserManager;
     //==========//
 
 	
     void Start()
     {
-        xayaClient = GetComponent<XAYAClient>();
+        request = new RPCRequest();
         channelPorts = new Dictionary<string, ChannelStatus>();
         gameUserManager = GetComponent<GameUserManager>();
     }
@@ -43,79 +39,72 @@ public class GameChannelManager : MonoBehaviour
             gameUserManager.ShowInfo("You already have opened channel.");
             return;
         }
-        string address=xayaClient.GetNewAddress(GlobalData.gPlayerName);
-        string value = "{\"g\":{\"xs\":{\"c\":{\"addr\":\""+address+"\"}}}}";        
-        string texid=xayaClient.NameUpdate(GlobalData.gPlayerName, value);
+
+        string address= request.GetNewAddress(XAYASettings.playerName);
+        string value = "{\"g\":{\"xs\":{\"c\":{\"addr\":\""+address+"\"}}}}";
+        JObject dataVal = JObject.Parse(value);
+        string texid= request.XAYANameUpdateDirect(XAYASettings.playerName, dataVal);
         GetComponent<GameUserManager>().ShowInfo("CREATE CHANNEL. Please wait...");
 
-        //RunChannelService(texid);
-        //=================== Waiting state ==================//
-        //StartChannelWaiting(texid);
-        //====================================================//
+        Debug.Log("NEW ADDRESS:" + address);
     }
+
+    public void OnApplicationQuit()
+    {
+        if (shipsChannelProcess != null)
+        {
+            shipsChannelProcess.Kill();
+        }
+    }
+
+    System.Diagnostics.Process shipsChannelProcess;
     public void RunChannelService(string channelId)
     {
+    #if UNITY_STANDALONE_WIN || UNITY_EDITOR
+        shipsChannelProcess = new System.Diagnostics.Process();
+        shipsChannelProcess.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
+        shipsChannelProcess.StartInfo.CreateNoWindow = false;
+        shipsChannelProcess.StartInfo.UseShellExecute = false;
+        shipsChannelProcess.StartInfo.FileName = Application.streamingAssetsPath + "/Daemon/ships-channel.exe";
 
-        //KillIsChannel();
+        shipsChannelProcess.StartInfo.Arguments = System.Environment.ExpandEnvironmentVariables(" --xaya_rpc_url=\"" + XAYASettings.GetServerUrl() + "\" --gsp_rpc_url=\"" + XAYASettings.GSPIP() + "\" --broadcast_rpc_url=\"" + XAYASettings.XAMPPbroadcastURL + ":" + XAYASettings.XAMPPbroadcastPORT + "\" --rpc_port=\"" + XAYASettings.gameChannelDefaultPort + "\" --playername=\"" + XAYASettings.playerName + "\" --channelid=\"" + channelId + "\"" + " --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
 
-        string channelServiceExePath = Application.streamingAssetsPath + "/shipsd/ships-channel.exe";      
-        string channelServiceStr = " --xaya_rpc_url=\"" + GlobalData.gSettingInfo.GetServerUrl() + "\" --gsp_rpc_url=\"" +
-            GlobalData.gSettingInfo.GSPIP + "\" --broadcast_rpc_url=\"http://seeder.xaya.io:10042\" --rpc_port=\"" + "29060" +"\" --playername=\"" +
-            GlobalData.gPlayerName.Substring(2) + "\" --channelid=\"" + channelId + "\" -alsologtostderr";
+        Debug.Log("SHIPS CHANNEL STARTS WITH ARGUMENTS: " + shipsChannelProcess.StartInfo.Arguments);
+
+        shipsChannelProcess.EnableRaisingEvents = true;
+        shipsChannelProcess.Start();
+    #else
+        string channelServiceExePath = Application.streamingAssetsPath + "/Daemon/ships-channel.exe";      
+        string channelServiceStr = " --xaya_rpc_url=\"" + XAYASettings.GetServerUrl() + "\" --gsp_rpc_url=\"" +
+            XAYASettings.GSPIP() + "\" --broadcast_rpc_url=\""+ XAYASettings.XAMPPbroadcastURL + ":" + XAYASettings.XAMPPbroadcastPORT + "\" --rpc_port=\"" + XAYASettings.gameChannelDefaultPort + "\" --playername=\"" +
+            XAYASettings.playerName + "\" --channelid=\"" + channelId + "\" -alsologtostderr";
 
         channelServiceStr += " --v=1";
         //-----run  batch file  for test-----//
-        channelServiceExePath = Application.streamingAssetsPath + "/shipsd/ships-channelrun.bat";
-        //channelServiceStr = " " + GlobalData.gSettingInfo.GetServerUrl() + "  " + GlobalData.gSettingInfo.GSPIP + " "+ channelId + " " + GlobalData.gPlayerName.Substring(2) + "" ;
-        //channelServiceStr += " --v=1";
-
+        channelServiceExePath = Application.streamingAssetsPath + "/Daemon/ships-channelrun.bat";
         print(channelServiceExePath);
         print(channelServiceStr);
-        //---------------------//
 
-        //-------test-------//
-        //channelServiceStr += " -log_dir=\"\" --v=1";
-        //------------------//ss
+        string workingDir = Application.streamingAssetsPath + "/Daemon";
+        string strCmdText = "ships-channel.exe --xaya_rpc_url=\"" + XAYASettings.GetServerUrl() + "\" --gsp_rpc_url=\"" +
+            XAYASettings.GSPIP() + "\" --broadcast_rpc_url=\""+ XAYASettings.XAMPPbroadcastURL + ":" + XAYASettings.XAMPPbroadcastPORT + "\" --rpc_port=\"" + XAYASettings.gameChannelDefaultPort + "\" --playername=\"" +
+            XAYASettings.playerName + "\" --channelid=\"" + channelId + "\" -alsologtostderr --v=1";
 
-        //if (!channelPorts.ContainsKey(channelId))
-        //{
-        //    channelPorts.Add(channelId, new ChannelStatus(curPort++, "0"));
-        //}
-        //--final code -----//
-
-        string workingDir = Application.streamingAssetsPath + "/shipsd";
-        string strCmdText = "ships-channel.exe --xaya_rpc_url=\"" + GlobalData.gSettingInfo.GetServerUrl() + "\" --gsp_rpc_url=\"" +
-            GlobalData.gSettingInfo.GSPIP + "\" --broadcast_rpc_url=\"http://seeder.xaya.io:10042\" --rpc_port=\"" + "29060" + "\" --playername=\"" +
-            GlobalData.gPlayerName.Substring(2) + "\" --channelid=\"" + channelId + "\" -alsologtostderr --v=1";
-
-
-
-        //=================================================================================================================//
-
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR
-        if (!XAYABitcoinLib.Utils.StartService2(workingDir,  "cmd.exe", "/c " +  strCmdText, false))
-        //if (!XAYABitcoinLib.Utils.StartService("cmd.exe", "/c " +"\""+ channelServiceExePath +"\" "+ channelServiceStr, false))
-        {
-            GlobalData.ErrorPopup("Channel service is not running.");
-        }
-        print("/c " + "\"" + channelServiceExePath + "\" " + channelServiceStr);
-        //Debug.Log(channelServiceExePath + channelServiceStr);
-#else
          if (!XAYABitcoinLib.Utils.StartService("/bin/bash", "-c 'ships-channel " + channelServiceStr +"'", false))
         {
             GlobalData.ErrorPopup("Channel service is not running.");
             Debug.Log("-c 'ships-channel " + channelServiceStr + "'");
         }
-        
-#endif
+    #endif
 
     }
     public void JoinGameChannel(string channelId)
     {
-        string address = xayaClient.GetNewAddress(GlobalData.gPlayerName);
+        string address = request.GetNewAddress(XAYASettings.playerName);
         
         string value = "{\"g\":{\"xs\":{\"j\":{\"id\":\""+ channelId + "\", \"addr\":\"" + address + "\"}}}}";
-        string texid = xayaClient.NameUpdate(GlobalData.gPlayerName, value);
+        JObject dataVal = JObject.Parse(value);
+        string texid = request.XAYANameUpdateDirect(XAYASettings.playerName, dataVal);
 
         GetComponent<GameUserManager>().ShowInfo("JOIN CHANNEL.("+ GlobalData.GetChannel(channelId).userNames[0]+")" +". Please wait...");
         //KillIsChannel();     
@@ -126,7 +115,8 @@ public class GameChannelManager : MonoBehaviour
         //string address = xayaClient.GetNewAddress(GlobalData.gPlayerName);
 
         string value = "{\"g\":{\"xs\":{\"a\":{\"id\":\"" + channelId + "\"}}}}";
-        string texid = xayaClient.NameUpdate(GlobalData.gPlayerName, value);
+        JObject dataVal = JObject.Parse(value);
+        string texid = request.XAYANameUpdateDirect(XAYASettings.playerName, dataVal);
 
         GetComponent<GameUserManager>().ShowInfo("CLOSE CHANNEL. Please wait...");
         //=================================================================================================================//
@@ -138,34 +128,40 @@ public class GameChannelManager : MonoBehaviour
     public void StartChannelWaiting(string channelId)
     {
         string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"getcurrentstate\", \"id\":0}";
-        
-        StartCoroutine(shipsdChannelRpcCommand(cmdstr, channelId, (status) => {
-                        
-            JObject jstatus= JObject.Parse(status) as JObject;
+
+        StartCoroutine(shipsdChannelRpcCommand(cmdstr, channelId, (status) =>
+        {
+            Debug.Log("Status to parse: " + status);
+
+            JObject jstatus = JObject.Parse(status) as JObject;
             //Debug.Log(jstatus["version"].ToString());
             //SetGameSateFromJson(status);
             WaitChange(channelId, jstatus["result"]["version"].ToString());
 
         }, 2.0f));
     }
-public void WaitChange(string channelId, string version)
-{
+
+    public void WaitChange(string channelId, string version)
+    {
 
         string cmdstr = "";
         if (version == null) return;
 
         cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"waitforchange\",  \"params\":[\"" + version + "\"],\"id\":0}";
 
-        StartCoroutine(waitforChangeBlockchain(version, channelId, (status) => {
+        StartCoroutine(waitforChangeBlockchain(version, channelId, (status) =>
+        {
 
 
-    }));
-}
-public void GetCurrentStateOnly(string channelId)
+        }));
+    }
+
+    public void GetCurrentStateOnly(string channelId)
     {
         string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"getcurrentstate\", \"id\":0}";
 
-        StartCoroutine(shipsdChannelRpcCommand(cmdstr, channelId, (status) => {
+        StartCoroutine(shipsdChannelRpcCommand(cmdstr, channelId, (status) =>
+        {
             //JObject jsonObject = JObject.Parse(status);            
             //print(status);
             try
@@ -176,14 +172,14 @@ public void GetCurrentStateOnly(string channelId)
                 if (status != null)
                 {
                     SetGameChannelSateFromJson(channelId, status);
-                    Debug.Log("getstate!"+Time.timeSinceLevelLoad);
+                    Debug.Log("getstate!" + Time.timeSinceLevelLoad);
                 }
                 else
                     Debug.Log("getstate_error!" + Time.timeSinceLevelLoad);
             }
             catch (System.Exception e)
-            {                
-                print(e.ToString()+"stauts:"+status);
+            {
+                print(e.ToString() + "stauts:" + status);
             }
 
         }));
@@ -230,7 +226,7 @@ public void GetCurrentStateOnly(string channelId)
 
         //Debug.Log("parti="+participants.ToString());
        
-        if (GlobalData.gPlayerName.Substring(2) == participants[0]["name"].ToString())
+        if (XAYASettings.playerName == participants[0]["name"].ToString())
         {
             GlobalData.gOpponentName = participants[1]["name"].ToString();
             GlobalData.gPlayerIndex = 0;
@@ -242,23 +238,23 @@ public void GetCurrentStateOnly(string channelId)
         }
         bool bOldTurn=GlobalData.gbTurn;
         //=======================================   Whos turn? ======================//
-        if (jresult["current"]["state"]["whoseturn"].ToString() == "1" && GlobalData.gPlayerName.Substring(2) == participants[1]["name"].ToString())
+        if (jresult["current"]["state"]["whoseturn"].ToString() == "1" && XAYASettings.playerName == participants[1]["name"].ToString())
         {
             GlobalData.gbTurn = true;
             GetComponent<GameUserManager>().imgTurnIcon.color = new Color32(0, 0, 255, 255);
         }
-        if (jresult["current"]["state"]["whoseturn"].ToString() == "0" && GlobalData.gPlayerName.Substring(2) == participants[0]["name"].ToString())
+        if (jresult["current"]["state"]["whoseturn"].ToString() == "0" && XAYASettings.playerName == participants[0]["name"].ToString())
         {
             GlobalData.gbTurn = true;
             GetComponent<GameUserManager>().imgTurnIcon.color = new Color32(0, 0, 255, 255);
         }
-        if (jresult["current"]["state"]["whoseturn"].ToString() == "0" && GlobalData.gPlayerName.Substring(2) == participants[1]["name"].ToString())
+        if (jresult["current"]["state"]["whoseturn"].ToString() == "0" && XAYASettings.playerName == participants[1]["name"].ToString())
         {
             GlobalData.gbTurn = false;
             GetComponent<GameUserManager>().imgTurnIcon.color = new Color32(255, 0, 0, 255);
         }
             
-        if (jresult["current"]["state"]["whoseturn"].ToString() == "1" && GlobalData.gPlayerName.Substring(2) == participants[0]["name"].ToString())
+        if (jresult["current"]["state"]["whoseturn"].ToString() == "1" && XAYASettings.playerName == participants[0]["name"].ToString())
         {
             GlobalData.gbTurn = false;
             GetComponent<GameUserManager>().imgTurnIcon.color = new Color32(255, 0, 0, 255);
@@ -399,18 +395,14 @@ public void GetCurrentStateOnly(string channelId)
         if(delay>0.001f)
             yield return new WaitForSeconds(delay);
 
-        //if (channelId == null || !channelPorts.ContainsKey(channelId))
-        //    port = 29060;
-        //else
-        //    port= channelPorts[channelId].port;
-
-       
         //================  fixed port =====================//
-        port = 29060;
+        port = XAYASettings.gameChannelDefaultPort;
         //==================================================//
-        string url = GlobalData.gSettingInfo.GetShipChannelUrl() + ":" +port;
+        string url = XAYASettings.GetChannelUrl() + ":" +port;
         //Debug.Log(url);
         //Debug.Log(requestJsonStr);
+
+        Debug.Log("going for url" + url);
 
         UnityWebRequest www = UnityWebRequest.Put(url, requestJsonStr);
 
@@ -427,7 +419,7 @@ public void GetCurrentStateOnly(string channelId)
             //GetComponent<GameUserManager>().ShowInfo("Channel State Error!");
             Debug.Log(www.error);
             Debug.Log(requestJsonStr);
-            yield return new WaitForSeconds(3);
+            //yield return new WaitForSeconds(3);
             tempStr = www.error;
             //GlobalData.bOpenedChannel = false;
 
@@ -457,16 +449,11 @@ public void GetCurrentStateOnly(string channelId)
             //----------2, waitforchange===============//
             //string tempStr = "";
             int port;
-            //if (channelId == null || !channelPorts.ContainsKey(channelId))
-            //    port = 29060;
-            //else
-            //    port = channelPorts[channelId].port;
-            //===========//
-            port = 29060;
+            port = XAYASettings.gameChannelDefaultPort;
 
             //Debug.Log("wait version:" + version+ Time.timeSinceLevelLoad.ToString().Substring(0,5) );
 
-            string url = GlobalData.gSettingInfo.GetShipChannelUrl() + ":" + port;
+            string url = XAYASettings.GetChannelUrl() + ":" + port;
             //print(url);
             //print(requestJsonStr);
             UnityWebRequest www = UnityWebRequest.Put(url, requestJsonStr);
@@ -515,9 +502,8 @@ public void GetCurrentStateOnly(string channelId)
             //yield return new WaitForSeconds(0.01f);
         }
     }
-    public bool IsRunningChannel(int port=29060)
+    public bool IsRunningChannel()
     {
-
         try
         {
             foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcesses())
@@ -543,7 +529,7 @@ public void GetCurrentStateOnly(string channelId)
         }
         return false;
     }
-    public bool KillChannel(int port = 29060)
+    public bool KillChannel()
     {
 
         try
@@ -592,9 +578,9 @@ public void GetCurrentStateOnly(string channelId)
         string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"stop\"}";
 
         //================  fixed port =====================//
-        int port = 29060;
+        int port = XAYASettings.gameChannelDefaultPort;
         //==================================================//
-        string url = GlobalData.gSettingInfo.GetShipChannelUrl() + ":" + port;
+        string url = XAYASettings.GetChannelUrl() + ":" + port;
         UnityWebRequest www = UnityWebRequest.Put(url, cmdstr);
         www.method = UnityWebRequest.kHttpVerbPOST;
         www.SetRequestHeader("Content-Type", "application/json"); www.SetRequestHeader("Accept", "application/json");
@@ -670,12 +656,27 @@ public void GetCurrentStateOnly(string channelId)
         
         StartCoroutine(shipsdChannelRpcCommand(cmdstr, GlobalData.gcurrentPlayedChannedId, (status) => { }));
     }
+
+    public void RevealPositionRequest(string channelId)
+    {
+        string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"revealposition\",\"params\":[]}";
+
+        StartCoroutine(shipsdChannelRpcCommand(cmdstr, channelId, (status) => {
+
+            Debug.Log("reveal resuklt" + status);
+
+        }));
+    }
+
     public void SetPositionRequest(string channelId,string strPos)
     {
         string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"setposition\",\"params\":[\""+strPos+"\"]}";
 
+        Debug.Log("SET METHIOD: " + cmdstr);
+
         StartCoroutine(shipsdChannelRpcCommand(cmdstr, channelId, (status) => {
 
+            Debug.Log("Set position result:" + status);
 
         }));
     }
@@ -691,7 +692,7 @@ public void GetCurrentStateOnly(string channelId)
         //==================  Hide Gameboard  =====================//
         GetComponent<GameUserManager>().InitGameBoard();
         //=======================================//
-#if UNITY_STANDALONE_LINUX        
+#if UNITY_STANDALONE_LINUX
         StopForceChannel();
         Debug.Log("stop in linux!");      
 #else

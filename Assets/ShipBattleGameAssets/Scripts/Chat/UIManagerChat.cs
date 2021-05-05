@@ -6,6 +6,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using XAYA;
 
 public class UIManagerChat: MonoBehaviour
 {
@@ -31,6 +32,17 @@ public class UIManagerChat: MonoBehaviour
     #endregion
 
     #region Unity Methods
+
+    public void LaunchChat()
+    {
+        string encodeduser = HexadecimalEncoding.ToHexString(XAYASettings.playerName).ToLower();
+
+        // Set values in UserDetails class
+        userDetailsModel.username = encodeduser;
+        userDetailsModel.password = XAYASettings.XIDAuthPassword;
+
+        XMPPConnection.Instance.Connect(encodeduser, XAYASettings.XIDAuthPassword);
+    }
 
     private void Start()
     {
@@ -104,8 +116,8 @@ public class UIManagerChat: MonoBehaviour
 
         // Direct join group chat
         mucManager = new MucManager(XMPPConnection.Instance.xmppClient);
-        mucManager.EnterRoom("xs@muc.chat.xaya.io", UIManagerChat.Instance.userDetailsModel.username);
-        userDetailsModel.roomID = "xs@muc.chat.xaya.io";
+        mucManager.EnterRoom(XAYASettings.gameID + "@muc.chat.xaya.io", UIManagerChat.Instance.userDetailsModel.username);
+        userDetailsModel.roomID = XAYASettings.gameID + "@muc.chat.xaya.io";
 
         OpenChatScreen();
     }

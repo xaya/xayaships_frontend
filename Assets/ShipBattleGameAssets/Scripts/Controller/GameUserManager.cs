@@ -6,13 +6,13 @@ using UnityEngine.Networking;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.IO;
-using BitcoinLib.RPC.RequestResponse;
 //using System.Diagnostics;
 
 using UnityEngine.UI;
 using System.Text.RegularExpressions;
 using System.Text;
 using System.Diagnostics;
+using XAYA;
 
 public class PlayerXIDSIgner
 {
@@ -126,15 +126,6 @@ public class HexadecimalEncoding
 
 public class GameUserManager : MonoBehaviour
 {
-    // Start is called before the first frame update
-    List<string> m_userNameList;
-    Dictionary<string, string> m_userNameAndValues;
-
-    [HideInInspector]
-    public XAYAClient xayaClient;
-
-    public UIManagerChat managerChat;
-
     [SerializeField]
     UnityEngine.UI.Text m_uiBalanceText = null;
     [SerializeField]
@@ -202,8 +193,16 @@ public class GameUserManager : MonoBehaviour
 
     public static GameUserManager Instance;
 
-    private bool retryChatEnumConection = false;
+
     private Process myProcessDaemonCharon;
+    private bool runAsLiteMode = false;
+
+    public bool runLocalCharonTestServer = true;
+
+    Process electrumDaemon;
+    Process xidLightDaemon;
+
+    RPCRequest request;
 
     private void OnDestroy()
     {
@@ -213,33 +212,19 @@ public class GameUserManager : MonoBehaviour
         }
     }
 
-    void Start()
+    public void SetRunAsLiteMode(bool newVal)
+    {
+        runAsLiteMode = newVal;
+    }
+
+    void UserManagerStart()
     {
         Instance = this;
 
-        xayaClient = GetComponent<XAYAClient>();
+        request = new RPCRequest();
         shipsdClient = GetComponent<ShipSDClient>();
         GlobalData.gErrorBox = errorPopup;
         GlobalData.gErrorText= errorText;
-        GlobalData.gSettingInfo = SettingInfo.getSettingFromJson();
-        //============ get user info from cookie ========================//
-        UnityEngine.Debug.Log(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData));
-        if (File.Exists(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData) + "\\xaya\\.cookie"))
-        {
-            string cookieStr = File.ReadAllText(System.Environment.GetFolderPath(System.Environment.SpecialFolder.ApplicationData) + "\\xaya\\.cookie");
-            string[] userInfo = cookieStr.Split(':');
-            if(userInfo!=null && userInfo.Length>1)
-            {
-                GlobalData.gSettingInfo.rpcUserName = userInfo[0];
-                GlobalData.gSettingInfo.rpcUserPassword = userInfo[1];
-            }
-        }
-        //===============================================================//
-
-        inputXayaURL.text = GlobalData.gSettingInfo.xayaURL;
-        inputRpcUserName.text = GlobalData.gSettingInfo.rpcUserName;
-        inputRpcUserPassword.text = GlobalData.gSettingInfo.rpcUserPassword;
-        inputGSPIP.text = GlobalData.gSettingInfo.GSPIP;
 
         //---------------------------------------------//
         if(shipsdClient.IsRunningGSPServer())
@@ -248,44 +233,6 @@ public class GameUserManager : MonoBehaviour
             checkLocalGSP.transform.GetChild(0).GetChild(0).gameObject.SetActive(true);
         }
         
-        //------------- check running xayad-------------------------//
-/*        
-        bool running = false;
-        
-            try
-            {
-            foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcessesByName("xayad"))
-            {
-                running = true;
-            }
-#if UNITY_STANDALONE_LINUX
-            foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcessesByName("xaya-qt"))
-            {
-                running = true;
-            }
-            foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcessesByName("./xaya-qt"))
-            {
-                running = true;
-            }
-#endif  
-        }
-        catch
-        {
-          
-
-        }
-       
-        if (!running)
-        {
-            GlobalData.ErrorPopup("Xaya Service is not running.\nYou must run xaya and restart application.");
-            errorCloseBtn.GetComponent<Button>().onClick.AddListener(delegate {
-                UnityEngine.SceneManagement.SceneManager.UnloadScene(0);
-                Application.Quit();
-            });
-            //new WaitForSeconds(2);
-            
-        }
-        */
         //----------------------------------------------------------//
         //---------------- Kill live Channel-----------------------------//
         GetComponent<GameChannelManager>().KillIsChannel();
@@ -306,189 +253,53 @@ public class GameUserManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        if (txtPlayerName != null && GlobalData.gPlayerName != null && GlobalData.gPlayerName.Length > 2) txtPlayerName.text = GlobalData.gPlayerName.Substring(2);
+        if (txtPlayerName != null && XAYASettings.playerName != null && XAYASettings.playerName.Length > 2) txtPlayerName.text = XAYASettings.playerName;
         if (txtOpponentName != null  && GlobalData.gOpponentName!=null && GlobalData.gOpponentName.Length>2)
             txtOpponentName.text = GlobalData.gOpponentName;
     }
-    //------------------Submit buttion Clicking--------------//
-    public void UpdateSettingInfo()
-    {
-        GlobalData.gSettingInfo.xayaURL = inputXayaURL.text;
-        GlobalData.gSettingInfo.rpcUserName = inputRpcUserName.text;
-        GlobalData.gSettingInfo.rpcUserPassword = inputRpcUserPassword.text;
-        GlobalData.gSettingInfo.GSPIP = inputGSPIP.text ;
 
-    }
+
     public void OnConnectClick()
     {
-        GlobalData.gSettingInfo.xayaURL = inputXayaURL.text;
-        GlobalData.gSettingInfo.rpcUserName =inputRpcUserName.text;
-        GlobalData.gSettingInfo.rpcUserPassword = inputRpcUserPassword.text;
+        //Lite mode?
 
-        // Check Running Xaya Server ===========================//
-
-        if (ConnectClient())
+        if (runAsLiteMode)
         {
-            UnityEngine.Debug.Log("Connection OK");
-            startUI.SetActive(false);
-            userSelectUI.SetActive(true);
-            //shipsdClient.GetCurrentStateAndWaiting();
+            // run electrum
+            //StartCoroutine(LaunchElectrum());
 
-            GlobalData.gSettingInfo.SaveToJson();
-
-            //GetComponent<GameChannelManager>().KillIsChannel();
         }
         else
         {
-            GlobalData.ErrorPopup("Xaya Server is not running!");
+            // Check Running Xaya Server ===========================//
+
+            /*
+            if (ConnectClient())
+            {
+                UnityEngine.Debug.Log("Connection OK");
+                startUI.SetActive(false);
+                userSelectUI.SetActive(true);
+                //shipsdClient.GetCurrentStateAndWaiting();
+
+                GlobalData.gSettingInfo.SaveToJson();
+
+                //GetComponent<GameChannelManager>().KillIsChannel();
+            }
+            else
+            {
+                GlobalData.ErrorPopup("Xaya Server is not running!");
+            }*/
         }
     }
+
     public void DisplayConnectionUI()
     {
         startUI.SetActive(true);
     }
 
-    IEnumerator LaunchXMPPServer()
-    {
-        string username = userSelectDropdown.captionText.text.Replace("p/", "");
-        CoroutineWithData<string> coroutine = null;
-
-        if (GlobalData.isLiteMode == false)
-        {
-            AsynchroniousRequests request = new AsynchroniousRequests();
-            coroutine = new CoroutineWithData<string>(request.AuthWithWallet(username, this), this);
-            yield return coroutine.Coroutine; while (coroutine.result == null) { yield return new WaitForEndOfFrame(); }
-            yield return new WaitForSeconds(0.5f);
-        }
-
-        if (coroutine != null && coroutine.result == "Call failed")
-        {
-            GlobalData.ErrorPopup("Error authenticating. Do you have XID name registered in XAYA wallet?");
-        }
-        else
-        {
-            string password = "";
-            if (GlobalData.isLiteMode == true)
-            {
-                password = GlobalData.XIDAuthPassword;
-            }
-            else
-            {
-                try
-                {
-                    JObject result = JObject.Parse(coroutine.result);
-                    password = result["result"]["data"].ToString();
-                }
-                catch
-                {
-                    retryChatEnumConection = true;
-                }
-            }
-
-            if (retryChatEnumConection == false)
-            {
-                string ourXIDpassword = password;
-                string ourXIDLogin = HexadecimalEncoding.ToHexString(username) + "@chat.xaya.io";
-
-                //ready to launch broadcaster
-
-                string userDirPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
-                string workingDir = userDirPath + "/Electrum-CHI";
-
-                myProcessDaemonCharon = new Process();
-                myProcessDaemonCharon.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                myProcessDaemonCharon.StartInfo.CreateNoWindow = true;
-                myProcessDaemonCharon.StartInfo.UseShellExecute = false;
-                myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--game_id \"xs\" --jid " + ourXIDLogin + " --password " + ourXIDpassword + " --muc \"muc.chat.xaya.io\" --port 10042");
-
-                myProcessDaemonCharon.StartInfo.FileName = Application.dataPath + "/StreamingAssets/shipsd/xmpp-broadcast-rpc-server.exe";
-                myProcessDaemonCharon.StartInfo.WorkingDirectory = workingDir;
-                myProcessDaemonCharon.EnableRaisingEvents = true;
-
-                myProcessDaemonCharon.Start();
-
-                string encodeduser = HexadecimalEncoding.ToHexString(username).ToLower();
-
-                // Set values in UserDetails class
-                managerChat.userDetailsModel.username = encodeduser;
-                managerChat.userDetailsModel.password = password;
-
-                XMPPConnection.Instance.Connect(encodeduser, password);
-            }
-        }
-
-        
-        GlobalData.gPlayerName = userSelectDropdown.captionText.text;
-        m_uiBalanceText.text = inputBalance.text;
-        GameChannelManager channelManager = GetComponent<GameChannelManager>();        
-
-        userSelectUI.SetActive(false);
-        GlobalData.bLogin = true;
-    }
-
-
-    IEnumerator WaitForXIDToSolve()
-    {
-        bool xIDResolved = false;
-
-        GlobalData.ErrorPopup("Registering XID, close this message as wait until game goes to next screen automatically");
-
-        while (xIDResolved == false)
-        {
-            string username = userSelectDropdown.captionText.text.Replace("p/", "");
-            PlayerXID nameData = xayaClient.XIDNameState(username);
-
-            if (nameData == null || (nameData.result.data.addresses.Count == 0 && nameData.result.data.signers.Count == 0))
-            {
-            }
-            else
-            {
-                GlobalData.xidNameIsRegistered = true;
-                xIDResolved = true;
-                StartCoroutine(LaunchXMPPServer());
-            }
-
-            yield return new WaitForSeconds(1.5f);
-        }
-
-        yield return null;
-    }
-
-
-    IEnumerator TestIfXIDNamePresent()
-    {
-        yield return null;
-
-        try
-        {
-            string username = userSelectDropdown.captionText.text;
-            PlayerXID nameData = xayaClient.XIDNameState(username.Replace("p/",""));
-
-            if (nameData == null || (nameData.result.data.addresses.Count == 0 && nameData.result.data.signers.Count == 0))
-            {
-                GlobalData.xidNameIsRegistered = false;
-                string newAddresss = xayaClient.GetNewAddress("", "legacy");
-
-                xayaClient.NameUpdate(username, "{\"g\":{\"id\":{\"s\":{\"g\":[\"" + newAddresss + "\"]}}}}");
-                StartCoroutine(WaitForXIDToSolve());
-            }
-            else
-            {
-                GlobalData.xidNameIsRegistered = true;
-                StartCoroutine(LaunchXMPPServer());
-            }
-        }
-        catch (Exception ex)
-        {
-            GlobalData.ErrorPopup(ex.ToString());
-        }
-
-        yield return null;
-    }
-
     public void OnGoBtn()
     {
-        StartCoroutine(TestIfXIDNamePresent());
+        //StartCoroutine(TestIfXIDNamePresent());
     }
 
     public void OnSubmitPositions()
@@ -517,76 +328,6 @@ public class GameUserManager : MonoBehaviour
         GetComponent<GameChannelManager>().SetShipPostionSubmit();
     }
 
-    public void OnSubmitBtn()
-    {
-
-        string newUserName = newUserNameText.text;
-        string errorStr = "";
-        bool bError = false;
-        //if (m_userNameList.Contains(newUserName))
-        //{
-        //    bError = true;         
-        //    errorStr = "this name exists already.";
-        //}
-        if(!XAYABitcoinLib.Utils.IsValidName(newUserName,"p/"))
-        {
-            bError = true;
-            errorStr = "User name is invalid. Namespace of user don't consist of lower-case letters only or can not exist.";
-        }
-
-        if (bError)
-        {
-            //errorText.text = errorStr;
-            //errorText.gameObject.SetActive(false);
-            //errorText.transform.gameObject.SetActive(true);
-            GlobalData.ErrorPopup(errorStr);
-            return;
-
-        }
-        string responsestr = xayaClient.RegisterUserName(newUserName);
-        var responseObject = new NameRegisterResult();
-        
-        JsonConvert.PopulateObject(responsestr, responseObject);
-        UnityEngine.Debug.Log(responsestr);
-
-        
-        if(responseObject.error!=null)
-        {
-            //errorText.text = responseObject.error.message;
-            //errorText.transform.gameObject.SetActive(true);
-            GlobalData.ErrorPopup(responseObject.error.message);
-            return;
-        }
-
-        StartCoroutine(waitCreatingName(newUserName));
-
-        //string cmdstr="{\"method\":\"name_register\",\"params\":[\""+ newUserName +"\",\"{}\"]}" ;
-        /*
-        StartCoroutine(xayaRpcCommand(cmdstr, (status)=> {
-            //NameRegisterResult result = NameRegisterResult.LoadJsonStr(status);
-            JsonRpcResponse<string> rpcResponse = JsonConvert.DeserializeObject<JsonRpcResponse<string>>(status);
-
-            //Debug.Log(rpcResponse.Result +",  errormessage:"+ rpcResponse.Error.Message);
-        }));
-        */
-        //FillNameList();
-        //xayaClient.na
-    }
-    private string status;
-    IEnumerator waitCreatingName(string newName)
-    {
-        waitingPanel.SetActive(true);
-        while (!m_userNameList.Contains(newName))
-        {
-            yield return new WaitForSeconds(0.1f);
-            m_userNameList= xayaClient.GetNameList();            
-        }
-        userSelectDropdown.ClearOptions();
-        userSelectDropdown.AddOptions(m_userNameList);
-        waitingPanel.SetActive(false);
-        
-    }
-
     public void StartGameByChannel(string channelId)
     {
 
@@ -604,78 +345,7 @@ public class GameUserManager : MonoBehaviour
         ShowInfo("START GAME.\n ARRANGE YOUR SHIPS!");
 
     }
-    private IEnumerator xayaRpcCommand(string requestJsonStr, Action<string> callback)
-    {
-        //string resultJsonStr = null;
-        string tempStr = "";
-        //Debug.Log(GlobalData.gSettingInfo.GetServerUrl());
-        //Debug.Log(requestJsonStr);
-        UnityWebRequest www = UnityWebRequest.Put(GlobalData.gSettingInfo.GetServerUrl(), requestJsonStr);
-        //UnityWebRequest www = UnityWebRequest.Put("http://admin:admin123$@127.0.0.1:8396/wallet/game.dat", m_text.text);
-
-        www.method = UnityWebRequest.kHttpVerbPOST;
-        www.SetRequestHeader("Content-Type", "application/json");
-        www.SetRequestHeader("Accept", "application/json");
-        www.downloadHandler = new DownloadHandlerBuffer();
-        yield return www.SendWebRequest();
-
-        if (www.isNetworkError || www.isHttpError)
-        {
-            UnityEngine.Debug.Log(www.error);
-            tempStr = www.error;
-        }
-        else
-        {
-            //resultJsonStr = www.downloadHandler.text;
-            GlobalData.resultJsonStr = www.downloadHandler.text;
-            tempStr = www.downloadHandler.text;
-            UnityEngine.Debug.Log(www.downloadHandler.text);
-        }
-        callback(tempStr);
-    }
-    public bool ConnectClient()
-    {
-        if (!xayaClient.connected)
-        {
-            try
-            {
-                if (xayaClient.Connect())
-                {
-                    FillNameList();
-                    inputBalance.text= xayaClient.GetBalance();
-                    //FillNameAndValues();
-                    return true;
-                }
-            }
-            catch (Exception e)
-            {
-                
-                ShowError(e.ToString());
-                return false;
-            }
-        }
-        else
-        {
-            try
-            {
-                //if ()
-                //{
-                    
-                //}
-                //else
-                //{
-                //    ShowError("No name selected.");
-                //}
-            }
-            catch (Exception e)
-            {
-                //return false;
-                ShowError(e.ToString());
-            }
-        }
-        return false;
-    }
-    
+  
     public void InitGameBoard()
     {
         m_gamePlayboard.SetActive(false);        
@@ -694,26 +364,6 @@ public class GameUserManager : MonoBehaviour
     {        
         //errorText.text = errorStr;
     }
-    public void FillNameList()
-    {
-
-        //inputBalance.text = xayaClient.GetBalance();
-        m_userNameList = xayaClient.GetNameList();
-
-        userSelectDropdown.ClearOptions();
-        userSelectDropdown.AddOptions(m_userNameList);
-
-        if (m_userNameList.Count > 0 )
-        {
-            GlobalData.gPlayerName = m_userNameList[0];
-        }
-        
-
-    }
-    public void FillNameAndValues()
-    {
-        m_userNameAndValues = xayaClient.GetNameAndValues();
-    }
 
     public void ShowInfo(string messageStr)
     {
@@ -725,10 +375,6 @@ public class GameUserManager : MonoBehaviour
         }
     }
 
-    public bool IsExistName(string namestr)
-    {
-        return m_userNameList.Contains(namestr);
-    }
     public void DisputeDisplay(bool bShow=true)
     {
         if (bShow)

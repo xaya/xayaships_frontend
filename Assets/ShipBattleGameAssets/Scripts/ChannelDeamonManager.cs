@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using CielaSpike;
 using UnityEngine.Networking;
+using XAYA;
 
 public class ChannelDeamonManager : MonoBehaviour
 {
@@ -52,10 +53,10 @@ public class ChannelDeamonManager : MonoBehaviour
     IEnumerator StartServiceAsync(string channelId)
     {
         yield return Ninja.JumpToUnity;
-        string channelServiceExePath = Application.streamingAssetsPath + "/shipsd/ships-channel.exe";
-        string channelServiceStr = " --xaya_rpc_url=\"" + GlobalData.gSettingInfo.GetServerUrl() + "\" --gsp_rpc_url=\"" +
-            GlobalData.gSettingInfo.GSPIP + "\" --broadcast_rpc_url=\"http://seeder.xaya.io:10042\" --rpc_port=\"" + "29060" + "\" --playername=\"" +
-            GlobalData.gPlayerName.Substring(2) + "\" --channelid=\"" + channelId + "\" -alsologtostderr";
+        string channelServiceExePath = Application.streamingAssetsPath + "/Daemon/ships-channel.exe";
+        string channelServiceStr = " --xaya_rpc_url=\"" + XAYASettings.GetServerUrl() + "\" --gsp_rpc_url=\"" +
+            XAYASettings.GSPIP() + "\" --broadcast_rpc_url=\""+ XAYASettings.XAMPPbroadcastURL + ":" + XAYASettings.XAMPPbroadcastPORT + "\" --rpc_port=\"" + XAYASettings.gameChannelDefaultPort + "\" --playername=\"" +
+            XAYASettings.playerName + "\" --channelid=\"" + channelId + "\" -alsologtostderr";
         channelServiceStr += " --v=1";
 
         //=================================================================================================================//
@@ -114,9 +115,9 @@ public class ChannelDeamonManager : MonoBehaviour
             //================  open flag set  =========================//
             GlobalData.bOpenedChannel = false;
             //================  fixed port =====================//
-            int port = 29060;
+            int port = XAYASettings.gameChannelDefaultPort;
             //==================================================//
-            string url = GlobalData.gSettingInfo.GetShipChannelUrl() + ":" + port;
+            string url = XAYASettings.GetChannelUrl() + ":" + port;
             UnityWebRequest www = UnityWebRequest.Put(url, cmdstr);
             www.method = UnityWebRequest.kHttpVerbPOST;
             www.SetRequestHeader("Content-Type", "application/json"); www.SetRequestHeader("Accept", "application/json");

@@ -62,123 +62,12 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Assets\CielaSpike\Thread Ninja\Example\ExampleScript.cs" />
+    <Compile Include="Assets\CielaSpike\Thread Ninja\Ninja.cs" />
+    <Compile Include="Assets\CielaSpike\Thread Ninja\Task.cs" />
+    <Compile Include="Assets\CielaSpike\Thread Ninja\TaskState.cs" />
+    <Compile Include="Assets\CielaSpike\Thread Ninja\ThreadNinjaMonoBehaviourExtensions.cs" />
     <Compile Include="Assets\GSPToggleManager.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Auxiliary\Encoders\ASCIIEncoder.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Auxiliary\Encoders\DataEncoder.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Auxiliary\Encoders\HexEncoder.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Auxiliary\GlobalConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Auxiliary\Hashing.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Auxiliary\UnixTime.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Base\CoinConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Base\CoinParameters.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Base\ICoinParameters.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Bitcoin\BitcoinConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Bitcoin\IBitcoinConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Dallar\DallarConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Dallar\IDallarConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Dash\DashConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Dash\IDashConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Dogecoin\DogecoinConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Dogecoin\IDogecoinConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Litecoin\ILitecoinConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Litecoin\LitecoinConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Mogwaicoin\IMogwaicoinConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Mogwaicoin\MogwaicoinConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Smartcash\ISmartcashConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\Smartcash\SmartcashConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\XAYA\IXAYAConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\CoinParameters\XAYA\XAYAConstants.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\ExceptionHandling\RawTransactions\RawTransactionExcessiveFeeException.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\ExceptionHandling\RawTransactions\RawTransactionInvalidAmountException.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\ExceptionHandling\Rpc\RpcException.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\ExceptionHandling\Rpc\RpcInternalServerErrorException.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\ExceptionHandling\Rpc\RpcRequestTimeoutException.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\ExceptionHandling\Rpc\RpcResponseDeserializationException.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\ExceptionHandling\RpcExtenderService\GetAddressBalanceException.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\ExtensionMethods\CoinServiceExtensionMethods.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\ExtensionMethods\DecimalExtensionMethods.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\RPC\Connector\IRpcConnector.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\RPC\Connector\RawRpcConnector.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\RPC\Connector\RpcConnector.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\RPC\RequestResponse\JsonRpcError.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\RPC\RequestResponse\JsonRpcRequest.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\RPC\RequestResponse\JsonRpcRequestArray.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\RPC\RequestResponse\JsonRpcRequestNotification.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\RPC\RequestResponse\JsonRpcResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\RPC\Specifications\RpcErrorCode.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\RPC\Specifications\RpcMethods.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Requests\AddNode\NodeAction.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Requests\CreateRawTransaction\CreateRawTransactionInput.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Requests\CreateRawTransaction\CreateRawTransactionOutput.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Requests\CreateRawTransaction\CreateRawTransactionRequest.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Requests\SignRawTransaction\SigHashType.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Requests\SignRawTransaction\SignRawTransactionInput.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Requests\SignRawTransaction\SignRawTransactionRequest.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\Bridges\ITransactionResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\CreateMultiSigResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\DecodeRawTransactionResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\DecodeScriptResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\EstimateSmartFeeResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetAddedNodeInfoResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetBlockResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetBlockTemplateResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetBlockchainInfoResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetChainTipsResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetFundRawTransactionResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetInfoResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetMemPoolInfoResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetMiningInfoResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetNameHistoryResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetNameListResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetNamePendingResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetNameScanResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetNetTotalsResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetNetworkInfoResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetPeerInfoResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetRawMemPoolResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetRawTransactionResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetShowNameResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetTransactionResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetTxOutSetInfoResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\GetWalletInfoResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\ListAddressGroupingsResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\ListReceivedByAccountResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\ListReceivedByAddressResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\ListSinceBlockResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\ListTransactionsResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\ListUnspentResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\SharedComponents\Vin.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\SharedComponents\Vout.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\SignRawTransactionResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Responses\ValidateAddressResponse.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Base\ICoinService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Bitcoin\BitcoinService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Bitcoin\IBitcoinService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Cryptocoin\CryptocoinService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Cryptocoin\ICryptocoinService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Dallar\DallarService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Dallar\IDallarService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Dash\DashService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Dash\IDashService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Dogecoin\DogecoinService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Dogecoin\IDogecoinService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Litecoin\ILitecoinService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Litecoin\LitecoinService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Mogwaicoin\IMogwaicoinService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Mogwaicoin\MogwaicoinService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Sarcoin\ISarcoinService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Sarcoin\SarcoinService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Smartcash\ISmartcashService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\Smartcash\SmartcashService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\XAYA\IXAYAService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\Coins\XAYA\XAYAService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\RpcServices\RpcExtenderService\IRpcExtenderService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\RpcServices\RpcExtenderService\RpcExtenderService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\RpcServices\RpcService\IRpcService.cs" />
-    <Compile Include="Assets\JsonDotNet\Assemblies\Windows\BitcoinLib\Services\RpcServices\RpcService\RpcService.cs" />
-    <Compile Include="Assets\Networking-RPC\MyRPCLib\JsonGeneralResponse.cs" />
-    <Compile Include="Assets\Networking-RPC\Third party\MiniJSON\MiniJSON.cs" />
-    <Compile Include="Assets\ShipBattleGameAssets\Scripts\AsynchroniousRequests.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\CannelPannelIno.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\ChannelDeamonManager.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\Chat\ConstantsChat.cs" />
@@ -231,13 +120,17 @@
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\UIScripts\PanelAnim.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\UIScripts\UpDownMenuBtn.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\Utils.cs" />
-    <Compile Include="Assets\ShipBattleGameAssets\Scripts\XayaRPC\XAYAClient.cs" />
-    <Compile Include="Assets\ThirdParty\CielaSpike\Thread Ninja\Example\ExampleScript.cs" />
-    <Compile Include="Assets\ThirdParty\CielaSpike\Thread Ninja\Ninja.cs" />
-    <Compile Include="Assets\ThirdParty\CielaSpike\Thread Ninja\Task.cs" />
-    <Compile Include="Assets\ThirdParty\CielaSpike\Thread Ninja\TaskState.cs" />
-    <Compile Include="Assets\ThirdParty\CielaSpike\Thread Ninja\ThreadNinjaMonoBehaviourExtensions.cs" />
-    <None Include="Assets\JsonDotNet\link.xml" />
+    <Compile Include="Assets\ShipBattleGameAssets\Scripts\XayaModule\AsyncCoroutineParent.cs" />
+    <Compile Include="Assets\ShipBattleGameAssets\Scripts\XayaModule\AsynchroniousRequests.cs" />
+    <Compile Include="Assets\ShipBattleGameAssets\Scripts\XayaModule\ConnectionStatusSolver.cs" />
+    <Compile Include="Assets\ShipBattleGameAssets\Scripts\XayaModule\ElectrumWalletHandler.cs" />
+    <Compile Include="Assets\ShipBattleGameAssets\Scripts\XayaModule\RPCRequest.cs" />
+    <Compile Include="Assets\ShipBattleGameAssets\Scripts\XayaModule\Singleton.cs" />
+    <Compile Include="Assets\ShipBattleGameAssets\Scripts\XayaModule\XAYADummyUI.cs" />
+    <Compile Include="Assets\ShipBattleGameAssets\Scripts\XayaModule\XAYADummyUISettings.cs" />
+    <Compile Include="Assets\ShipBattleGameAssets\Scripts\XayaModule\XAYAJsonStructs.cs" />
+    <Compile Include="Assets\ShipBattleGameAssets\Scripts\XayaModule\XAYASettings.cs" />
+    <Compile Include="Assets\ShipBattleGameAssets\Scripts\XayaModule\XAYAWalletAPI.cs" />
     <Reference Include="UnityEngine">
       <HintPath>C:/Program Files/Unity/Hub/Editor/2019.4.0f1/Editor/Data/Managed/UnityEngine/UnityEngine.dll</HintPath>
     </Reference>
@@ -421,14 +314,11 @@
     <Reference Include="UnityEditor">
       <HintPath>C:/Program Files/Unity/Hub/Editor/2019.4.0f1/Editor/Data/Managed/UnityEditor.dll</HintPath>
     </Reference>
-    <Reference Include="Newtonsoft.Json">
-      <HintPath>G:/xayaships_frontend/Assets/JsonDotNet/Assemblies/Standalone/Newtonsoft.Json.dll</HintPath>
-    </Reference>
-    <Reference Include="System.Configuration.ConfigurationManager">
-      <HintPath>G:/xayaships_frontend/Assets/JsonDotNet/Assemblies/Windows/System.Configuration.ConfigurationManager.dll</HintPath>
-    </Reference>
     <Reference Include="Matrix">
       <HintPath>G:/xayaships_frontend/Assets/Plugins/Matrix.dll</HintPath>
+    </Reference>
+    <Reference Include="Newtonsoft.Json">
+      <HintPath>G:/xayaships_frontend/Assets/Plugins/Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="Unity.Analytics.Editor">
       <HintPath>G:/xayaships_frontend/Library/PackageCache/com.unity.analytics@3.3.5/Unity.Analytics.Editor.dll</HintPath>

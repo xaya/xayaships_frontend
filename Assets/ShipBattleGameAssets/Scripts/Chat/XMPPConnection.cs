@@ -5,6 +5,7 @@ using Matrix.Xmpp.Client;
 using System;
 using System.Collections;
 using UnityEngine;
+using XAYA;
 
 public class XMPPConnection : MonoBehaviour
 {
@@ -54,7 +55,7 @@ public class XMPPConnection : MonoBehaviour
 
     private void XmppLogin(object sender, Matrix.EventArgs e)
     {
-        if (GlobalData.ignoreChatDebugLog == false)
+        if (XAYASettings.ignoreChatDebugLog == false)
         {
             Debug.Log("onLogin --- " + sender + " e :  " + e.ToString());
         }
@@ -65,7 +66,7 @@ public class XMPPConnection : MonoBehaviour
 
     private void XmppRegister(object sender, Matrix.EventArgs e)
     {
-        if (GlobalData.ignoreChatDebugLog == false)
+        if (XAYASettings.ignoreChatDebugLog == false)
         {
             Debug.Log("OnRegister");
         }
@@ -75,7 +76,7 @@ public class XMPPConnection : MonoBehaviour
     {
         e.AcceptCertificate = true;
 
-        if (GlobalData.ignoreChatDebugLog == false)
+        if (XAYASettings.ignoreChatDebugLog == false)
         {
             Debug.Log("OnValidateCertificate --- " + sender + " e :  " + e.ToString());
         }
@@ -83,7 +84,7 @@ public class XMPPConnection : MonoBehaviour
 
     private void XmppOnError(object sender, ExceptionEventArgs e)
     {
-        if (GlobalData.ignoreChatDebugLog == false)
+        if (XAYASettings.ignoreChatDebugLog == false)
         {
             Debug.Log("OnError : " + e.ToString() + " ........... " + sender.ToString());
         }
@@ -94,7 +95,7 @@ public class XMPPConnection : MonoBehaviour
 
     private void XmppOnPresence(object sender, PresenceEventArgs e)
     {
-        if (GlobalData.ignoreChatDebugLog == false)
+        if (XAYASettings.ignoreChatDebugLog == false)
         {
             Debug.Log("OnPresence : " + e.ToString());
         }
@@ -104,7 +105,7 @@ public class XMPPConnection : MonoBehaviour
 
     void XmppClientOnReceiveXml(object sender, TextEventArgs e)
     {
-        if (GlobalData.ignoreChatDebugLog == false)
+        if (XAYASettings.ignoreChatDebugLog == false)
         {
             AddDebug("RECV: " + e.Text);
         }
@@ -112,7 +113,7 @@ public class XMPPConnection : MonoBehaviour
 
     void XmppClientOnSendXml(object sender, TextEventArgs e)
     {
-        if (GlobalData.ignoreChatDebugLog == false)
+        if (XAYASettings.ignoreChatDebugLog == false)
         {
             AddDebug("SEND: " + e.Text);
         }
@@ -120,7 +121,7 @@ public class XMPPConnection : MonoBehaviour
 
     private void xmppClient_OnMessage(object sender, MessageEventArgs e)
     {
-        if (GlobalData.ignoreChatDebugLog == false)
+        if (XAYASettings.ignoreChatDebugLog == false)
         {
             Debug.Log(string.Format("OnMessage from {0}", e.Message));
         }
@@ -130,7 +131,7 @@ public class XMPPConnection : MonoBehaviour
 
     private void XmppClient_OnSendBody(object sender, BodyEventArgs e)
     {
-        if (GlobalData.ignoreChatDebugLog == false)
+        if (XAYASettings.ignoreChatDebugLog == false)
         {
             Debug.Log(string.Format("OnSendBody {0}", e.Body));
         }
@@ -138,7 +139,7 @@ public class XMPPConnection : MonoBehaviour
 
     private void XmppClient_OnReceiveBody(object sender, BodyEventArgs e)
     {
-        if (GlobalData.ignoreChatDebugLog == false)
+        if (XAYASettings.ignoreChatDebugLog == false)
         {
             Debug.Log(string.Format("OnReceiveBody {0}", e.Body));
         }
@@ -146,7 +147,7 @@ public class XMPPConnection : MonoBehaviour
 
     private void XmppClient_OnClose(object sender, Matrix.EventArgs e)
     {
-        if (GlobalData.ignoreChatDebugLog == false)
+        if (XAYASettings.ignoreChatDebugLog == false)
         {
             Debug.Log("onClose --- " + e.ToString());
         }
@@ -160,7 +161,7 @@ public class XMPPConnection : MonoBehaviour
 
     void AddDebug(string debug)
     {
-        if (GlobalData.ignoreChatDebugLog == false)
+        if (XAYASettings.ignoreChatDebugLog == false)
         {
             Debug.Log(debug);
         }
@@ -208,7 +209,7 @@ public class XMPPConnection : MonoBehaviour
     // Send message to single person
     public void SendMessageTOPerson(string username, string sendMsg)
     {
-        if (GlobalData.ignoreChatDebugLog == false)
+        if (XAYASettings.ignoreChatDebugLog == false)
         {
             Debug.Log("Sending Message");
         }
@@ -225,7 +226,7 @@ public class XMPPConnection : MonoBehaviour
     // Send invite message
     public void SendInviteMessageTOPerson(string username, string sendMsg, string roomID)
     {
-        if (GlobalData.ignoreChatDebugLog == false)
+        if (XAYASettings.ignoreChatDebugLog == false)
         {
             Debug.Log("Sending Message");
         }
@@ -249,7 +250,7 @@ public class XMPPConnection : MonoBehaviour
     // Send msg to group
     public void SendMessageToRoom(string sendMsgString, string roomID)
     {
-        if (GlobalData.ignoreChatDebugLog == false)
+        if (XAYASettings.ignoreChatDebugLog == false)
         {
             Debug.Log("Sending Message To Group");
         }

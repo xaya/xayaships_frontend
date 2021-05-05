@@ -3,33 +3,20 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 using BattleShip.BLL.GameLogic;
-using BitcoinLib.Auxiliary;
-using BitcoinLib.ExceptionHandling.Rpc;
-using BitcoinLib.RPC.RequestResponse;
-using BitcoinLib.RPC.Specifications;
-using BitcoinLib.Services.Coins.Base;
 using Newtonsoft.Json;
+using XAYA;
 
 public class GlobalData : MonoBehaviour {
 
-    [HideInInspector]
-    public static string XIDServerAddress = "http://127.0.0.1:8400/"; //TODO ;; make configurable from UI
-
-    public static bool ignoreChatDebugLog = false;
-    public static string XIDAuthPassword = "";
-    public static bool isLiteMode = false;
-    public static bool xidNameIsRegistered = false;
     public static bool bPlaying = false;
     public static bool bOpenedChannel = false;
     public static bool bLogin = false;
-    public static bool bLiveChannel = true;
+    public static bool bLiveChannel = false;
     public static bool bFinished = false;
     public static bool bRunonce = false;
     public static string resultJsonStr = "";
     public static GameControl gGameControl = new GameControl();  
-    public static SettingInfo gSettingInfo = new SettingInfo();
 
-    public static string gPlayerName = "";
     public static string gOpponentName = "";
 
     public static GameObject gErrorBox;
@@ -56,8 +43,8 @@ public class GlobalData : MonoBehaviour {
     public static int gPlayerIndex = 0;
     public static DisputeStatus disputeStatus=new DisputeStatus();
 
-	// Use this for initialization
-	void Start () {
+    // Use this for initialization
+    void Start () {
 		
 	}
 	
@@ -83,7 +70,7 @@ public class GlobalData : MonoBehaviour {
     }
     public static int GetFreeChannelPort()
     {
-        int portNumber = 29060;
+        int portNumber = XAYASettings.gameChannelDefaultPort;
         foreach(ChannelInfo c in ggameChannelList)
         {
             if (c.port > portNumber) portNumber = c.port;
@@ -128,67 +115,13 @@ public class GlobalData : MonoBehaviour {
             foreach(string s in c.userNames)
             {
                 //-----------   if  channel that Player created or joined  exists,   ------------------//
-                if (s == GlobalData.gPlayerName.Substring(2)) return true;
+                if (s == XAYASettings.playerName) return true;
             }
         }
         return false;
     }
 }
-public class SettingInfo
-{
-    public string xayaURL;
-    public string rpcUserName;
-    public string rpcUserPassword;
-    public string portNumber;
-    public string protocal="http";
-    public string GSPIP = "";
-    public SettingInfo()
-    {
-       
-    }
-    public void LoadFromJson(string jsonPath)
-    {
-        JsonUtility.FromJson<SettingInfo>(System.IO.File.ReadAllText(jsonPath));
-    }
-    public void SaveToJson()
-    {
-        string jsonPath;
-#if UNITY_EDITOR
-        if (File.Exists(GlobalData.GetSaveSettingPath()))
-            File.Delete(GlobalData.GetSaveSettingPath());
-#endif
 
-        if (!File.Exists(GlobalData.GetSaveSettingPath()))
-            File.Copy(Path.Combine(Application.streamingAssetsPath, "setting.json"), GlobalData.GetSaveSettingPath());
-        jsonPath = GlobalData.GetSaveSettingPath();
-        File.WriteAllText(jsonPath, JsonUtility.ToJson(this));
-    }
-    public string GetServerUrl()
-    {
-        //return "http://" + userName + ":" + userPassword + "@" + ip + ":" + portNumber + "/wallet/game.dat";
-        return "http://"+ rpcUserName+":"+rpcUserPassword+"@"+ xayaURL;
-    }
-    public string GetShipSDUrl()
-    {
-        return protocal + "://" + rpcUserName + ":" + rpcUserPassword + "@" + GSPIP;
-    }
-    public  string GetShipChannelUrl()
-    {
-        return protocal + "://" + rpcUserName + ":" + rpcUserPassword + "@127.0.0.1";
-    }
-    public static SettingInfo getSettingFromJson()
-    {
-#if UNITY_EDITOR
-        if (File.Exists(GlobalData.GetSaveSettingPath()))
-            File.Delete(GlobalData.GetSaveSettingPath());
-#endif
-
-            if (!File.Exists(GlobalData.GetSaveSettingPath()))
-            File.Copy(Path.Combine(Application.streamingAssetsPath, "setting.json"), GlobalData.GetSaveSettingPath());
-        
-        return JsonUtility.FromJson<SettingInfo>(System.IO.File.ReadAllText(GlobalData.GetSaveSettingPath()));
-    }
-}
 public class UserInfo
 {
     public string name;

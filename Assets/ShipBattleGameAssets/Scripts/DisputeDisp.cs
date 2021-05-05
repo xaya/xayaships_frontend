@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
+using XAYA;
 
 public class DisputeDisp : MonoBehaviour
 {
@@ -43,7 +44,7 @@ public class DisputeDisp : MonoBehaviour
                 }
                 else
                 {
-                    issuserText.text += GlobalData.gPlayerName.Substring(2);
+                    issuserText.text += XAYASettings.playerName;
                 }
             }
         }

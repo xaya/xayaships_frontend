@@ -5,6 +5,7 @@ using CielaSpike;
 using UnityEngine.Networking;using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Linq;
+using XAYA;
 
 public class ShipSDClient : MonoBehaviour
 {
@@ -23,76 +24,33 @@ public class ShipSDClient : MonoBehaviour
     int errorCounter = 0;
     bool bCurrentLive = false;
     float runTime = 0;
-    // Start is called before the first frame update
+
+    public static ShipSDClient Instance;
+
     void Start()
     {
-        //m_errorBox = GameObject.Find("errorBox");
-        if (IsRunningGSPServer())
-        {            
-            GetCurrentStateAndWaiting();
-            runTime = Time.time;
-            //return;
-        }
+        Instance = this;
+    }
+
+    // Start is called before the first frame update
+    public void SetUpShipClient()
+    {
+        GetCurrentStateAndWaiting();
+        runTime = Time.time;
     }
 
     // Update is called once per frame
     void Update()
     {
-        //Debug.Log("GSP live" + bCurrentLive);
-        if(!bCurrentLive && (Time.time - runTime)>15 && GetComponent<GameUserManager>() && gspRunnungToggle.isOn )
+        if (XAYASettings.playerLoggedIn)
         {
-            Debug.Log("GSP restart!!");
-            KillGSP();
-            GlobalData.ErrorPopup("GSP failed to start.");
-            //GetComponent<GameUserManager>().DisplayConnectionUI();
-        }        
-    }
-    public void startGSPServer()
-    {
-        //--------Checking Local Server running state-----------//
-        if (IsRunningGSPServer())
-        {
-            //GetCurrentStateAndWaiting();
-            return;
+            if (!bCurrentLive && (Time.time - runTime) > 15 && GetComponent<GameUserManager>() && gspRunnungToggle.isOn)
+            {
+                Debug.Log("GSP restart!!");
+                KillGSP();
+                GlobalData.ErrorPopup("GSP failed to start.");
+            }
         }
-        //------------------------------------------------------//
-        string strCmdText;
-        GetComponent<GameUserManager>().UpdateSettingInfo();
-
-        if (shipsdPathBackfix == null || shipsdPathPrefix == null) return;
-
-        string strShipSDPath = shipsdPathPrefix.text + GlobalData.gSettingInfo.rpcUserName + ":" + GlobalData.gSettingInfo.rpcUserPassword + "@"+ GlobalData.gSettingInfo.xayaURL+"\" --game_rpc_port="+29050+ shipsdPathBackfix.text;
-        //------  run bat file -----//
-        
-        strCmdText ="\""+ Application.streamingAssetsPath+ "/shipsd/shipsd.exe\"" + strShipSDPath;
-        //strCmdText+= " -log_dir=\"datadir\" --v=1";
-        strCmdText += " --v=1";
-
-        string workingDir = Application.streamingAssetsPath + "/shipsd";
-        strCmdText = "shipsd.exe " + strShipSDPath;
-        Debug.Log(strCmdText);
-
-        //-------runnning bat file  for test ------//
-        //strCmdText ="\""+ Application.streamingAssetsPath + "/shipsd/" + "shipsdrun.bat\" " + GlobalData.gSettingInfo.rpcUserName + ":" + GlobalData.gSettingInfo.rpcUserPassword + "@" + GlobalData.gSettingInfo.xayaURL;
-        //------------------------//
-        string envPath = System.Environment.GetFolderPath(System.Environment.SpecialFolder.UserProfile);
-        //Debug.Log(envPath);
-        string strLinuxParams= " shipsd --xaya_rpc_url=\"http://"+ GlobalData.gSettingInfo.rpcUserName + ":" +GlobalData.gSettingInfo.rpcUserPassword + "@"+GlobalData.gSettingInfo.xayaURL+"\" --game_rpc_port=29050 --datadir=\""+envPath+"/.xayagame\" -alsologtostderr --v=1";
-
-        print(strCmdText);
-        //System.Diagnostics.Process.Start("cmd.exe", "/c " +strCmdText); //Start cmd process
-#if UNITY_STANDALONE_WIN || UNITY_EDITOR
-        XAYABitcoinLib.Utils.StartService2(workingDir, "cmd.exe", "/c " + strCmdText);
-        //XAYABitcoinLib.Utils.StartService("cmd.exe", "\"/c\" " + strCmdText);
-#else
-        XAYABitcoinLib.Utils.StartService("/bin/bash", "-c '" + strLinuxParams+"'");
-        
-#endif
-        Debug.Log("Win GSP path" + strCmdText);
-        //Debug.Log("Linux GSP path:"+ strLinuxParams);
-        GetCurrentStateAndWaiting();
-        runTime = Time.time;
-        Debug.Log(runTime);
     }
 
     public void GetCurrentStateAndWaiting()
@@ -149,6 +107,7 @@ public class ShipSDClient : MonoBehaviour
                 channelInfo.userNames[index++] = j["name"].ToString();
             }
 
+            //For now, we simply ignore multiple opened channels/dropped in a middle games
             if(!GlobalData.bRunonce && a.Count>1)
             {
                 channelInfo.bignored = true;
@@ -167,26 +126,27 @@ public class ShipSDClient : MonoBehaviour
             if (channelInfo.userNames.Length > 1)
             {
                 if (GlobalData.bOpenedChannel || 
-                    (channelInfo.userNames[0] != GlobalData.gPlayerName.Substring(2) &&
-                    channelInfo.userNames[1] != GlobalData.gPlayerName.Substring(2)))
+                    (channelInfo.userNames[0] != XAYASettings.playerName &&
+                    channelInfo.userNames[1] != XAYASettings.playerName))
                     continue;
 
                 string opponentName = channelInfo.userNames[0];
-                if (channelInfo.userNames[0] == GlobalData.gPlayerName.Substring(2))
+                if (channelInfo.userNames[0] == XAYASettings.playerName)
                     opponentName = channelInfo.userNames[1];
                 //=========================    ==============================//                    
-                if(!GetComponent<GameUserManager>().IsExistName("p/"+opponentName))    //=== case  only other user====//
+                if(!XAYADummyUI.Instance.IsExistName(opponentName))    //=== case  only other user====//
                 {
                     Debug.Log("liveFlag:" + GlobalData.bLiveChannel);
                       if (!GlobalData.bLiveChannel && !GlobalData.IsIgnoreChannel(channelInfo.id))
                     //   if (!GlobalData.bLiveChannel)
                         {
+                        GlobalData.InitGameChannelData();
                         GlobalData.bOpenedChannel = true;
                         //============= Create  Channe
                         GetComponent<GameUserManager>().StartGameByChannel(channelInfo.id);
                         //case menu is active, collapse  menu 
                         GetComponent<GameUserManager>().InitMenu();
-                        GlobalData.InitGameChannelData();
+                        
 
                         GlobalData.bLiveChannel = true;
                         GlobalData.bFinished = false;
@@ -276,7 +236,7 @@ public class ShipSDClient : MonoBehaviour
     {
         
         string tempStr = "";
-        UnityWebRequest www = UnityWebRequest.Put(GlobalData.gSettingInfo.GetShipSDUrl(), requestJsonStr);
+        UnityWebRequest www = UnityWebRequest.Put(XAYASettings.GetSDUrl(), requestJsonStr);
        // Debug.Log("Requesting to ShipSD!!" + requestJsonStr);
         www.method = UnityWebRequest.kHttpVerbPOST;
         www.SetRequestHeader("Content-Type", "application/json");
@@ -312,7 +272,7 @@ public class ShipSDClient : MonoBehaviour
 
             requestJsonStr = "{\"jsonrpc\":\"2.0\", \"method\":\"waitforchange\", \"params\":[\"" + blockhash + "\"],\"id\":0}";
             //----------2, waitforchange===============//
-            UnityWebRequest www = UnityWebRequest.Put(GlobalData.gSettingInfo.GetShipSDUrl(), requestJsonStr);
+            UnityWebRequest www = UnityWebRequest.Put(XAYASettings.GetSDUrl(), requestJsonStr);
             //Debug.Log("Requesting to ShipSD!!" + requestJsonStr);
             www.method = UnityWebRequest.kHttpVerbPOST;
             www.SetRequestHeader("Content-Type", "application/json");
@@ -361,12 +321,12 @@ public class ShipSDClient : MonoBehaviour
             {
                 try
                 {
-                    if (p.ProcessName == "shipsd")
+                    if (p.ProcessName == XAYASettings.DaemonName)
                     {
                         //print("shipsd is already locally running.");
                         return true;
                     }
-                    if (p.ProcessName == "shipsdrun")
+                    if (p.ProcessName == XAYASettings.DaemonName+"run")
                     {
                         //print("shipsd is already locally running.");
                         return true;
@@ -394,7 +354,7 @@ public class ShipSDClient : MonoBehaviour
     IEnumerator StopServiceAsync()
     {
         string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"stop\"}";       
-        string url = GlobalData.gSettingInfo.GetShipSDUrl();
+        string url = XAYASettings.GetSDUrl();
         Debug.Log(url);
         UnityWebRequest www=null;
         try
@@ -405,7 +365,7 @@ public class ShipSDClient : MonoBehaviour
         }
         catch
         {
-            print(GlobalData.gSettingInfo.GetShipSDUrl());
+            print(XAYASettings.GetSDUrl());
         }
 
         if(www!=null)
@@ -417,7 +377,7 @@ public class ShipSDClient : MonoBehaviour
         gspRunnungToggle.isOn = false;
         try
         {
-            foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcessesByName("shipsd"))
+            foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcessesByName(XAYASettings.DaemonName))
             {
                 try
                 {                    
