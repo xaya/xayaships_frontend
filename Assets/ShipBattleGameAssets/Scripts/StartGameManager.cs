@@ -27,12 +27,4 @@ public class StartGameManager : MonoBehaviour
     {
         
     }
-
-    void OnApplicationQuit()
-    {
-        GetComponent<ChannelDeamonManager>().StopChannelService();
-        GetComponent<ShipSDClient>().StopService();
-
-        Debug.Log("Application ending after " + Time.time + " seconds");
-    }
 }

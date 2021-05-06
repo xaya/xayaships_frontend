@@ -554,7 +554,7 @@ namespace XAYA
             string stubs = Application.streamingAssetsPath + "/Daemon/" + XAYASettings.rpcCommandJsonFile;
 
             string passwordD = "fillemeplease";
-            string authMessage = r.AuthWithWallet(username, "chat.xaya.io", out passwordD);
+            string authMessage = r.AuthWithWallet(username, XAYASettings.chatDomainName, out passwordD);
 
             bool signSolved = false;
             string singResult = "";
@@ -666,14 +666,14 @@ namespace XAYA
                 try
                 {
                     string ourXIDpassword = r.SetAuthStignature(passwordD, singResult);
-                    string ourXIDLogin = HexadecimalEncoding.ToHexString(username) + "@chat.xaya.io";
+                    string ourXIDLogin = HexadecimalEncoding.ToHexString(username) + "@" + XAYASettings.chatDomainName;
 
                     XAYASettings.XIDAuthPassword = ourXIDpassword;
 
                     myProcessDaemonCharon.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                     myProcessDaemonCharon.StartInfo.CreateNoWindow = true;
                     myProcessDaemonCharon.StartInfo.UseShellExecute = false;
-                    myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--server_jid smc@chat.xaya.io --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --backend_version \"0.3\" --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\" --alsologtostderr");
+                    myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--server_jid "+XAYASettings.chatID+"@"+XAYASettings.chatDomainName+" --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --backend_version \"0.3\" --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\" --alsologtostderr");
 
                     myProcessDaemonCharon.StartInfo.FileName = Application.streamingAssetsPath + "/Daemon/charon-client.exe";
                     myProcessDaemonCharon.StartInfo.WorkingDirectory = workingDir;
@@ -699,7 +699,7 @@ namespace XAYA
         public void LaunchXMPPServer()
         {
             string ourXIDpassword = XAYASettings.XIDAuthPassword;
-            string ourXIDLogin = HexadecimalEncoding.ToHexString(XAYASettings.playerName) + "@chat.xaya.io";
+            string ourXIDLogin = HexadecimalEncoding.ToHexString(XAYASettings.playerName) + "@" + XAYASettings.chatDomainName;
 
             string userDirPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             string workingDir = userDirPath + "/Electrum-CHI";
@@ -708,7 +708,7 @@ namespace XAYA
             XAMPPServerDaemon.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             XAMPPServerDaemon.StartInfo.CreateNoWindow = true;
             XAMPPServerDaemon.StartInfo.UseShellExecute = false;
-            XAMPPServerDaemon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--game_id \"" + XAYASettings.gameID + "\" --jid " + ourXIDLogin + " --password " + ourXIDpassword + " --muc \"muc.chat.xaya.io\" --port "+ XAYASettings.XAMPPbroadcastPORT);
+            XAMPPServerDaemon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--game_id \"" + XAYASettings.gameID + "\" --jid " + ourXIDLogin + " --password " + ourXIDpassword + " --muc \"muc."+XAYASettings.chatDomainName+"\" --port "+ XAYASettings.XAMPPbroadcastPORT);
 
             XAMPPServerDaemon.StartInfo.FileName = Application.dataPath + "/StreamingAssets/Daemon/xmpp-broadcast-rpc-server.exe";
             XAMPPServerDaemon.StartInfo.WorkingDirectory = workingDir;

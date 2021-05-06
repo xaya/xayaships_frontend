@@ -138,7 +138,7 @@ namespace XAYA
             JObject container = new JObject();
 
             JProperty usernameP = new JProperty("name", username);
-            JProperty applicationP = new JProperty("application", "chat.xaya.io");
+            JProperty applicationP = new JProperty("application", XAYASettings.chatDomainName);
             JProperty dataP = new JProperty("data", new JObject());
 
             container.Add(usernameP);

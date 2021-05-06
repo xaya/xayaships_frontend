@@ -346,6 +346,14 @@ public class ShipSDClient : MonoBehaviour
         return false;
     }
 
+    void OnApplicationQuit()
+    {
+        GetComponent<ChannelDeamonManager>().StopChannelService();
+        GetComponent<ShipSDClient>().StopService();
+
+        Debug.Log("Application ending after " + Time.time + " seconds");
+    }
+
     public void StopService()
     {
         StartCoroutine(StopServiceAsync());

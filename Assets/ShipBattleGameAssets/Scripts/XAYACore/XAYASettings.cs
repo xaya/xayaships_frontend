@@ -11,6 +11,12 @@ namespace XAYA
     {
         public static LoginMode LoginMode = LoginMode.Simple;
         public static string gameID = "xs"; //xs goes for Xayaships
+
+        public static string chatID = "sme"; //xampp chat server prefix
+        public const string chatLicense = @"eJxkkcluwjAURX8FsUWtCYMglbHKECKmEAoEyM7EJjIZHDwQkq8vKi0surs65+m9Kz04ZwFNJa3ckjiVvSoO3yQ/qRwL+hE/VBVBV3CiAzUhaIGVYDcIXgSuNE4VUwUyIHhmONRS8YQKBB2cUNRPQxrzypDHXLKEQ/BD4ZAnGU4L1NeKpzzhWlZ2XMREVuaKQPCnoZVgFiOckuLzhgv8zu4bHuw+9Ly0zQhW1LplTNDRPaFGvWEYDaMOwT8F1yxMsdKCormmrjPYh9moZnYmJrMv4pytDl+0xa1SeK45EBmRneZhv2IiX0Vtq5wU9cwvvcTJLSteTsHIHR83rObNgD4JQwyWwTpvLuSlHXpXw+tYvnTW5k77MmgsZ3EnKsOuvdle+45j1bvsFIDcvowWl2g55bOj0So3oFZySYLJwC71mHC99s/X/TbqQfDqDcHv89C3AA==";
+        public const string chatDomainName = "chat.xaya.io";
+        public const string defaultChatRoomID = "sme@muc.chat.xaya.io";
+
         public static string DaemonName = "shipsd"; // exe file name of game daemon
         public static string rpcCommandJsonFile = "channel.json";
 
