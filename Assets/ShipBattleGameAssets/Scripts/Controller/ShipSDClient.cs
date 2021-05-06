@@ -7,7 +7,20 @@ using Newtonsoft.Json.Linq;
 using System.Linq;
 using XAYA;
 
-public class ShipSDClient : MonoBehaviour
+public class DisputeStatus
+{
+
+    public bool canresolve;
+    public long height;
+    public int whoseturn;
+    public DisputeStatus()
+    {
+        this.height = 0;
+        this.canresolve = true;
+    }
+}
+
+public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
 {
     [SerializeField]
     UnityEngine.UI.Text shipsdPathPrefix;
@@ -25,18 +38,363 @@ public class ShipSDClient : MonoBehaviour
     bool bCurrentLive = false;
     float runTime = 0;
 
+    public GameShootManager gameShootManager;
+    public GameShootManager ourBoardManager;
+    GameUserManager gameUserManager;
+
     public static ShipSDClient Instance;
+
+    public void OnWaitForChangeNewBlock()
+    {
+        GetCurrentStateFromFreshBlock();
+    }
+
+    public void OnWaitForChangeTID(PendingStateData latestPendingData)
+    {
+    }
+
+    public bool SerializedPendingIsDifferent(PendingStateData latestPendingData)
+    {
+        return false;
+    }
 
     void Start()
     {
-        Instance = this;
+        gameUserManager = GetComponent<GameUserManager>();
+        Instance = this;    
+    }
+
+    public void RegisterForWaitForChange()
+    {
+        XAYAWaitForChange.Instance.objectsRegisteredForWaitForChange.Add(this);
+    }
+
+    public void CreateGameChannel()
+    {
+        if (GlobalData.IsOpenedChannel())
+        {
+            gameUserManager.ShowInfo("You already have opened channel.");
+            return;
+        }
+
+        GameChannelManager.Instance.CreateGameChannel();
+
+        gameUserManager.ShowInfo("CREATE CHANNEL. Please wait...");
+    }
+
+    public void JoinGameChannel(string channelId)
+    {
+        GameChannelManager.Instance.JoinGameChannel(channelId);
+        GetComponent<GameUserManager>().ShowInfo("JOIN CHANNEL.(" + GlobalData.GetChannel(channelId).userNames[0] + ")" + ". Please wait...");
+    }
+
+    public void CloseGameChannel(string channelId)
+    {
+        GameChannelManager.Instance.CloseGameChannel(channelId);
+        GetComponent<GameUserManager>().ShowInfo("CLOSE CHANNEL. Please wait...");
+    }
+
+    public void InitGameboard()
+    {
+        foreach (Transform tShip in gameUserManager.MyshipObjs.transform)
+        {
+            tShip.GetComponent<DraggableShip>().InitPos();
+        }
+
+        gameShootManager.ClearMarker();
+        ourBoardManager.ClearMarker();
+        GlobalData.InitGameChannelData();
+
+        //==================  Hide Gameboard  =====================//
+        gameUserManager.InitGameBoard();
+        //=======================================//
+
+        StopForceChannel();
+    }
+
+    public void SetShipPostionSubmit()
+    {
+        char[] positionstr = new char[64];
+        string strPos = "";
+        for (int i = 0; i < 64; i++)
+            positionstr[i] = '.';
+
+        bool bSetPos = true;
+
+        int[][] matrixShipsIndex = new int[8][];
+        for (int i = 0; i < 8; i++)
+            matrixShipsIndex[i] = new int[8];
+        for (int i = 0; i < 8; i++)
+            for (int j = 0; j < 8; j++)
+            {
+                matrixShipsIndex[i][j] = -1;
+            }
+
+        foreach (Transform tShip in GetComponent<GameUserManager>().MyshipObjs.transform)
+        {
+            if (tShip.GetComponent<DraggableShip>().GetPositions() == null)
+            {
+                //--------- some ships is not seted position-------------------------//             
+                bSetPos = false;
+                continue;
+                //----------------------------///
+            }
+
+            foreach (BattleShip.BLL.Requests.Coordinate c in tShip.GetComponent<DraggableShip>().GetPositions())
+            {
+                positionstr[(c.YCoordinate - 1) * 8 + (c.XCoordinate - 1)] = 'x';
+
+            }
+        }
+
+        if (!bSetPos)
+        {
+            GetComponent<GameUserManager>().ShowInfo("You must position your ships!");
+            return;
+        }
+
+        for (int i = 0; i < 64; i++)
+            strPos += positionstr[i];
+        Debug.Log(GlobalData.gcurrentPlayedChannedId);
+        SetPositionRequest(GlobalData.gcurrentPlayedChannedId, strPos);
+        GlobalData.gbSumitPosition = true;
+        GlobalData.bPlaying = true;
+    }
+
+    void SetDisputeStatus(JObject jsonDispute)
+    {
+
+        if (jsonDispute != null)
+        {
+            string jsonString = jsonDispute.ToString();
+            DisputeStatus disputeStatus = JsonConvert.DeserializeObject<DisputeStatus>(jsonString);
+            GlobalData.disputeStatus = disputeStatus;
+
+            if (!disputeStatus.canresolve)
+            {
+                if (GlobalData.gbTurn)
+                    gameUserManager.ShowInfo("There is dispute!");
+                gameUserManager.DisputeDisplay();
+            }
+            else
+            {
+                gameUserManager.DisputeDisplay(false);
+            }
+        }
+        else
+        {
+            if (GlobalData.disputeStatus != null)
+                GlobalData.disputeStatus.canresolve = true;
+            gameUserManager.DisputeDisplay(false);
+        }
+    }
+
+    void SetShootStatus(JArray jGuesses)
+    {
+        if (jGuesses == null && jGuesses.Count < 2) return;
+
+        string playerGuesses1;
+        string playerGuesses2;
+        gameShootManager.ClearMarker();
+        ourBoardManager.ClearMarker();
+
+        if (GlobalData.gPlayerIndex == 1)
+        {
+            playerGuesses1 = jGuesses[0].ToString();
+            playerGuesses2 = jGuesses[1].ToString();
+        }
+        else
+        {
+            playerGuesses1 = jGuesses[1].ToString();
+            playerGuesses2 = jGuesses[0].ToString();
+        }
+
+        for (int i = 0; i < playerGuesses1.Length; i++)
+        {
+            string ch = playerGuesses1.Substring(i, 1);
+            int row = i % 9 + 1;
+            int col = i / 9 + 1;
+            if (ch == "x")
+            {
+                gameShootManager.SetMarker(new Vector2(row, col), true);
+            }
+            if (ch == "m")
+            {
+                // Debug.Log("row: " + row + "col:" + col);
+                gameShootManager.SetMarker(new Vector2(row, col), false);
+            }
+        }
+        for (int i = 0; i < playerGuesses2.Length; i++)
+        {
+            string ch = playerGuesses2.Substring(i, 1);
+            int row = i % 9 + 1;
+            int col = i / 9 + 1;
+            if (ch == "x")
+            {
+                ourBoardManager.SetMarker(new Vector2(row, col), true);
+            }
+            if (ch == "m")
+            {
+                Debug.Log("row: " + row + "col:" + col);
+                ourBoardManager.SetMarker(new Vector2(row, col), false);
+            }
+        }
+
+    }
+
+    public void SetShootSubmit(Vector2 v)
+    {
+        string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"shoot\",\"params\":{ \"row\":" + (int)v.x + ", \"column\":" + (int)v.y + "}}";
+
+        RPCRequest request = new RPCRequest();
+        request.ChannelXayaReqDirect(cmdstr);
+    }
+
+    public void RevealPositionRequest(string channelId)
+    {
+        string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"revealposition\",\"params\":[]}";
+
+        RPCRequest request = new RPCRequest();
+        request.ChannelXayaReqDirect(cmdstr);
+    }
+
+    public void SetPositionRequest(string channelId, string strPos)
+    {
+        string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"setposition\",\"params\":[\"" + strPos + "\"]}";
+
+        RPCRequest request = new RPCRequest();
+        request.ChannelXayaReqDirect(cmdstr);
+    }
+
+    public void StopForceChannel()
+    {
+        GlobalData.bOpenedChannel = false;
+        GameChannelManager.Instance.KillChannel();
+        GlobalData.bLiveChannel = false;
+    }
+
+    public bool IsSetPosition()
+    {
+        Debug.Log(GlobalData.gGameControl.gameMyBoard.GetCurrnetShipIndex());
+        return GlobalData.gGameControl.gameMyBoard.GetCurrnetShipIndex() < 7;
+    }
+    public void DisputeRequest()
+    {
+        string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"filedispute\", \"id\":0}";
+
+        RPCRequest request = new RPCRequest();
+        request.ChannelXayaReqDirect(cmdstr);
+    }
+
+    public void SetGameChannelSateFromJson(string channelId, string result)
+    {
+        JObject jresult = JObject.Parse(result) as JObject;
+        jresult = jresult["result"] as JObject;
+        Debug.Log(jresult.ToString());
+
+        if (jresult["existsonchain"] != null && (jresult["existsonchain"].ToString() == "false" || jresult["existsonchain"].ToString() == "False"))
+        {
+            if (!GlobalData.bFinished)
+            {
+                if (GlobalData.gPlayerIndex == GlobalData.gWinner)
+                    GlobalData.ErrorPopup("The game was finished. You have won.");
+                else
+                    GlobalData.ErrorPopup("The game was finished. You have lost.");
+
+                Debug.Log("beforeInit:" + GlobalData.bLiveChannel);
+                InitGameboard();
+                Debug.Log("Init game! live:" + GlobalData.bLiveChannel);
+                GlobalData.bFinished = true;
+            }
+            return;
+            //}
+        }
+
+
+        JArray participants = jresult["current"]["meta"]["participants"] as JArray;
+
+        //Debug.Log("parti="+participants.ToString());
+
+        if (XAYASettings.playerName == participants[0]["name"].ToString())
+        {
+            GlobalData.gOpponentName = participants[1]["name"].ToString();
+            GlobalData.gPlayerIndex = 0;
+        }
+        else
+        {
+            GlobalData.gOpponentName = participants[0]["name"].ToString();
+            GlobalData.gPlayerIndex = 1;
+        }
+        bool bOldTurn = GlobalData.gbTurn;
+        //=======================================   Whos turn? ======================//
+        if (jresult["current"]["state"]["whoseturn"].ToString() == "1" && XAYASettings.playerName == participants[1]["name"].ToString())
+        {
+            GlobalData.gbTurn = true;
+            GetComponent<GameUserManager>().imgTurnIcon.color = new Color32(0, 0, 255, 255);
+        }
+        if (jresult["current"]["state"]["whoseturn"].ToString() == "0" && XAYASettings.playerName == participants[0]["name"].ToString())
+        {
+            GlobalData.gbTurn = true;
+            GetComponent<GameUserManager>().imgTurnIcon.color = new Color32(0, 0, 255, 255);
+        }
+        if (jresult["current"]["state"]["whoseturn"].ToString() == "0" && XAYASettings.playerName == participants[1]["name"].ToString())
+        {
+            GlobalData.gbTurn = false;
+            GetComponent<GameUserManager>().imgTurnIcon.color = new Color32(255, 0, 0, 255);
+        }
+
+        if (jresult["current"]["state"]["whoseturn"].ToString() == "1" && XAYASettings.playerName == participants[0]["name"].ToString())
+        {
+            GlobalData.gbTurn = false;
+            GetComponent<GameUserManager>().imgTurnIcon.color = new Color32(255, 0, 0, 255);
+        }
+
+        if (jresult["current"]["state"]["whoseturn"].ToString() == null || jresult["current"]["state"]["whoseturn"].ToString() == "" || jresult["current"]["state"]["whoseturn"].ToString() == "NULL")
+        {
+            GlobalData.gbTurn = false;
+            GetComponent<GameUserManager>().imgTurnIcon.color = new Color32(200, 200, 200, 255);
+        }
+
+        if (!bOldTurn && GlobalData.gbTurn)
+        {
+            GetComponent<GameUserManager>().ShowInfo("YOUR TURN!");
+        }
+
+        if (jresult["height"] != null)
+        {
+            GlobalData.gChannelHeight = long.Parse(jresult["height"].ToString());
+        }
+
+        //================= ****** Dispute  *****      ============================//
+        SetDisputeStatus(jresult["dispute"] as JObject);
+        //================= **** Shooting result **** ===================================//
+        JObject jParsed = jresult["current"]["state"] as JObject;
+        jParsed = jParsed["parsed"] as JObject;
+        Debug.Log(jParsed.ToString());
+        //if (jParsed == null || jParsed["phase"].ToString()!="shoot") return;
+        if (jParsed == null) return;
+        JArray jGuesses = jParsed["guesses"] as JArray;
+        Debug.Log(jGuesses.ToString());
+        if (jGuesses != null) SetShootStatus(jGuesses);
+
+        //============== ******* Winner state ****** =================//
+        if (jParsed["winner"] != null && jParsed["phase"].ToString() == "finished")
+        {
+            GlobalData.gWinner = int.Parse(jParsed["winner"].ToString());
+            Debug.Log("Game Finished!");
+            string strInfo = "You have won.";
+            if (GlobalData.gPlayerIndex != GlobalData.gWinner)
+                strInfo = "You have lost.";
+            GetComponent<GameUserManager>().ShowInfo("GAME FINISHED! " + strInfo);
+        }
     }
 
     // Start is called before the first frame update
     public void SetUpShipClient()
     {
-        GetCurrentStateAndWaiting();
+        GetCurrentStateFromFreshBlock();
         runTime = Time.time;
+        RegisterForWaitForChange();
     }
 
     // Update is called once per frame
@@ -53,30 +411,23 @@ public class ShipSDClient : MonoBehaviour
         }
     }
 
-    public void GetCurrentStateAndWaiting()
+    public void GetCurrentStateFromFreshBlock()
     {
-        string cmdstr= "{\"jsonrpc\":\"2.0\", \"method\":\"getcurrentstate\", \"id\":0}";
+        string currentState = GameChannelManager.Instance.GetCurrentStateOnly();
+        retStatusJson ret = JsonConvert.DeserializeObject<retStatusJson>(currentState);
 
-        StartCoroutine(shipsdRpcCommand(cmdstr, (status) => {
-            //JObject jsonObject = JObject.Parse(status);                    
-            retStatusJson ret = JsonConvert.DeserializeObject<retStatusJson>(status);
-        
-            //Debug.Log(ret.result.blockhash);
+        if (ret != null)
+        {
             GlobalData.gblockhash = ret.result.blockhash;
             GlobalData.gblockHeight = ret.result.height;
             GlobalData.gblockStatusStr = ret.result.state;
-            SetGameSateFromJson(status);
-            WaitChange(GlobalData.gblockhash); 
-            
-        }));
+            SetGameSateFromJson(currentState);
+        }
     }
+
     public void SetGameSateFromJson(string result)
     {
-        //string json = @"{  CPU: 'Intel',  Drives: [    'DVD read/writer',    '500 gigabyte hard drive'  ]}";
-
         JObject jresult = JObject.Parse(result) as JObject;
-
-        //Debug.Log(jresult["result"]["gamestate"]["channels"]);
 
         //================  Get channel Info  ==============//
         JObject jChannels= jresult["result"]["gamestate"]["channels"] as JObject;
@@ -185,201 +536,18 @@ public class ShipSDClient : MonoBehaviour
         //============================================================//
 
     }
-    public void GetCurrentStateOnly()
+    public void GetCurrentInitialState()
     {
-        string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"getcurrentstate\", \"id\":0}";
+        string currentState = GameChannelManager.Instance.GetCurrentStateOnly();
+        retStatusJson ret = JsonConvert.DeserializeObject<retStatusJson>(currentState);
 
-        StartCoroutine(shipsdRpcCommand(cmdstr, (status) => {
-            //JObject jsonObject = JObject.Parse(status);            
-            //print(status);
-            try
-            {
-                retStatusJson ret = JsonConvert.DeserializeObject<retStatusJson>(status);
-                //Debug.Log("getstate:" + ret.result.height + " hash" + ret.result.blockhash);
-                //Debug.Log(ret.result.blockhash);
-                GlobalData.gblockhash = ret.result.blockhash;
-                GlobalData.gblockHeight = ret.result.height;
-                GlobalData.gblockStatusStr = ret.result.state;
-                bCurrentLive = true;
-                SetGameSateFromJson(status);
-                
-            }
-            catch (System.Exception e)
-            {
-
-
-                //bCurrentLive = false;
-                print(e.ToString());                
-            }
-           
-            
-        }));
-    }
-    public void WaitChange(string blockhash)
-    {
-
-        string cmdstr = "";
-        if (blockhash == null) return;
-            
-
-        cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"waitforchange\",  \"params\":[\"" + blockhash + "\"],\"id\":0}";
-
-        StartCoroutine(waitforChangeBlockchain(blockhash, (status) => {
-            
-            //waitforchangeResult ret = JsonConvert.DeserializeObject<waitforchangeResult>(status);
-            
-            //Debug.Log(ret.result);
-            
-        }));
-    }
-    private IEnumerator shipsdRpcCommand(string requestJsonStr, System.Action<string> callback)
-    {
-        
-        string tempStr = "";
-        UnityWebRequest www = UnityWebRequest.Put(XAYASettings.GetSDUrl(), requestJsonStr);
-       // Debug.Log("Requesting to ShipSD!!" + requestJsonStr);
-        www.method = UnityWebRequest.kHttpVerbPOST;
-        www.SetRequestHeader("Content-Type", "application/json");
-        www.SetRequestHeader("Accept", "application/json");
-        www.downloadHandler = new DownloadHandlerBuffer();
-        yield return www.SendWebRequest();
-
-        if (www.isNetworkError || www.isHttpError)
-        {
-            Debug.Log(www.error);
-            tempStr = www.error;
-            bCurrentLive = false;
-        }
-        else
-        {
-            //resultJsonStr = www.downloadHandler.text;
-            GlobalData.resultJsonStr = www.downloadHandler.text;
-            tempStr = www.downloadHandler.text;
-            bCurrentLive = true;
-            //Debug.Log(www.downloadHandler.text);
-        }
-        callback(tempStr);
+        GlobalData.gblockhash = ret.result.blockhash;
+        GlobalData.gblockHeight = ret.result.height;
+        GlobalData.gblockStatusStr = ret.result.state;
+        bCurrentLive = true;
+        SetGameSateFromJson(currentState);
     }
 
-    private IEnumerator waitforChangeBlockchain(string blockhash, System.Action<string> callback)
-    {
-        
-        string tempStr = "";
-        //string requestJsonStr=;
-        string requestJsonStr;
-        
-        while (true){         
-
-            requestJsonStr = "{\"jsonrpc\":\"2.0\", \"method\":\"waitforchange\", \"params\":[\"" + blockhash + "\"],\"id\":0}";
-            //----------2, waitforchange===============//
-            UnityWebRequest www = UnityWebRequest.Put(XAYASettings.GetSDUrl(), requestJsonStr);
-            //Debug.Log("Requesting to ShipSD!!" + requestJsonStr);
-            www.method = UnityWebRequest.kHttpVerbPOST;
-            www.SetRequestHeader("Content-Type", "application/json");
-            www.SetRequestHeader("Accept", "application/json");
-            www.downloadHandler = new DownloadHandlerBuffer();
-            yield return www.SendWebRequest();
-
-            if (www.isNetworkError || www.isHttpError)
-            {
-                Debug.Log(www.error);
-                tempStr = www.error;
-                bCurrentLive = false;
-                //break;
-            }
-            else
-            {
-                //resultJsonStr = www.downloadHandler.text;
-                GlobalData.resultJsonStr = www.downloadHandler.text;
-                tempStr = www.downloadHandler.text;
-                bCurrentLive = true;
-                waitforchangeResult ret = JsonConvert.DeserializeObject<waitforchangeResult>(tempStr);
-
-      //====       3.            ===================
-                blockhash = ret.result;
-                Debug.Log("wait:" + blockhash);
-                //4. call getcurentstate again ====================//
-                if (blockhash != GlobalData.gblockhash)
-                {
-                    GlobalData.gblockhash = blockhash;
-                        GetCurrentStateOnly();
-                }
-                //Debug.Log(www.downloadHandler.text);
-            }
-            callback(blockhash);
-            yield return new WaitForSeconds(0.01f);
-        }
-    }
-
-
-    public bool IsRunningGSPServer()
-    {
-        
-        try
-        {
-            foreach (System.Diagnostics.Process p  in  System.Diagnostics.Process.GetProcesses())
-            {
-                try
-                {
-                    if (p.ProcessName == XAYASettings.DaemonName)
-                    {
-                        //print("shipsd is already locally running.");
-                        return true;
-                    }
-                    if (p.ProcessName == XAYASettings.DaemonName+"run")
-                    {
-                        //print("shipsd is already locally running.");
-                        return true;
-                    }
-                    //print(p.ToString());
-                }
-                catch (System.Exception e)
-                {
-                    print("Mini exception when trying to list the name " + e);
-                }
-            }
-        }
-        catch (System.Exception e)
-        {
-            print("Exception caught " + e);            
-        }
-        return false;
-    }
-
-    void OnApplicationQuit()
-    {
-        GetComponent<ChannelDeamonManager>().StopChannelService();
-        GetComponent<ShipSDClient>().StopService();
-
-        Debug.Log("Application ending after " + Time.time + " seconds");
-    }
-
-    public void StopService()
-    {
-        StartCoroutine(StopServiceAsync());
-    }
-
-    IEnumerator StopServiceAsync()
-    {
-        string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"stop\"}";       
-        string url = XAYASettings.GetSDUrl();
-        Debug.Log(url);
-        UnityWebRequest www=null;
-        try
-        {
-            www = UnityWebRequest.Put(url, cmdstr);
-            www.method = UnityWebRequest.kHttpVerbPOST;
-            www.SetRequestHeader("Content-Type", "application/json"); www.SetRequestHeader("Accept", "application/json");            
-        }
-        catch
-        {
-            print(XAYASettings.GetSDUrl());
-        }
-
-        if(www!=null)
-            yield return www.SendWebRequest();
-        
-    }
     public bool KillGSP()
     {
         gspRunnungToggle.isOn = false;

@@ -250,6 +250,7 @@ namespace XAYA
                 GlobalData.bLogin = true;
 
                 ShipSDClient.Instance.SetUpShipClient();
+                XAYAWaitForChange.Instance.StartRunning(false, false, true);
             }
             else
             {

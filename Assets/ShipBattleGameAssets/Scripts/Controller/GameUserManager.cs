@@ -225,18 +225,6 @@ public class GameUserManager : MonoBehaviour
         shipsdClient = GetComponent<ShipSDClient>();
         GlobalData.gErrorBox = errorPopup;
         GlobalData.gErrorText= errorText;
-
-        //---------------------------------------------//
-        if(shipsdClient.IsRunningGSPServer())
-        {
-            checkLocalGSP.isOn = true;
-            checkLocalGSP.transform.GetChild(0).GetChild(0).gameObject.SetActive(true);
-        }
-        
-        //----------------------------------------------------------//
-        //---------------- Kill live Channel-----------------------------//
-        GetComponent<GameChannelManager>().KillIsChannel();
-        
     }
     
     public void CreateLeaderPannel(KeyValuePair<string, string> userInfo)
@@ -303,8 +291,7 @@ public class GameUserManager : MonoBehaviour
     }
 
     public void OnSubmitPositions()
-    {
-        
+    {      
         if (GlobalData.bPlaying)
         {
             ShowInfo("You already submited ship's positions.");
@@ -322,23 +309,17 @@ public class GameUserManager : MonoBehaviour
             ShowInfo("Positions of ships do not validate!\nYou can't submit ship's postitions.");
             return;
         }
-        UnityEngine.Debug.Log(bValidate);
-        //GlobalData.ErrorPopup(bValidate.ToString());
 
-        GetComponent<GameChannelManager>().SetShipPostionSubmit();
+        ShipSDClient.Instance.SetShipPostionSubmit();
     }
 
     public void StartGameByChannel(string channelId)
     {
-
         UnityEngine.Debug.Log(GlobalData.bOpenedChannel);
-        //if (GlobalData.bOpenedChannel) return;
-        GlobalData.gcurrentPlayedChannedId = channelId;
 
+        GlobalData.gcurrentPlayedChannedId = channelId;
         GetComponent<GameChannelManager>().RunChannelService(channelId);
-        //WaitForSeconds w= new WaitForSeconds(2)
-               
-        GetComponent<GameChannelManager>().StartChannelWaiting(channelId);
+        ShipSDClient.Instance.GetCurrentInitialState();
 
         m_gamePlayboard.SetActive(false);
         m_gamePlayboard.SetActive(true);        
@@ -388,6 +369,6 @@ public class GameUserManager : MonoBehaviour
     public void OnDisputeBtn()
     {
         ShowInfo("You started a dispute!");
-        GetComponent<GameChannelManager>().DisputeRequest();
+        ShipSDClient.Instance.DisputeRequest();
     }
 }

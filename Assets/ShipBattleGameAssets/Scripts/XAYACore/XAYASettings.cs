@@ -29,19 +29,16 @@ namespace XAYA
 
         public static bool launchChat = true; //true if we want dummy UI to also launch chat
 
-        [HideInInspector]
         public static string GameServerAddress = ""; //game's GSP address 
-
-        [HideInInspector]
         public static string WalletServerAddress = ""; //electron or electrum wallet address
-
-        [HideInInspector]
         public static string XIDServerAddress = ""; //address of XID, which is either integrated into electron, or xid-light running alongside electrum.exe
 
         public static string ElectronWalletIPAddress, ElectronWalletPort, ElectronWalletUsername, ElectronWalletPassword, GameDaemonIP, GameDaemonPort, ElectrumWalletIPAddress,  ElectrumWalletUsername, ElectrumWalletPassword, ElectrumWalletPort, XIDAuthPassword = "";
 
         public static bool playerLoggedIn = false;
         public static string playerName = "";
+
+        public static bool gspHeightFetched = false; //We set this tur true on the first valid fetch
 
         public static string GetUserName()
         {
@@ -72,7 +69,7 @@ namespace XAYA
             return LoginMode == LoginMode.Simple;
         }
 
-        public static string GetSDUrl()
+        public static string GetChannelDaemonUrl()
         {
             return "http" + "://" + ElectronWalletUsername + ":" + ElectronWalletPassword + "@" + GSPIP();
         }

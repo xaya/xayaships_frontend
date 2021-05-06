@@ -16,17 +16,10 @@ public class CannelPannelIno : MonoBehaviour {
     [SerializeField]
     GameObject actBtn;
 
-
-    // Use this for initialization
-    void Start () {
-		
-	}
 	
 	// Update is called once per frame
-	void Update () {
-
-        //Debug.Log("ChannelInfo: "+ Id + GlobalData.ggameChannelList.Count);
-
+	void Update ()
+    {
 		if(Id<GlobalData.ggameLobbyChannelList.Count)
         {
             playerNameText.text =GlobalData.ggameLobbyChannelList[Id].id.Substring(0,7)+": ("+  GlobalData.ggameLobbyChannelList[Id].userNames[0];
@@ -38,8 +31,6 @@ public class CannelPannelIno : MonoBehaviour {
             }
             playerNameText.text += ")  ";
             playerCountText.text = GlobalData.ggameLobbyChannelList[Id].userNames.Length.ToString();
-
-            //statusText.text = GlobalData.ggameLobbyChannelList[Id].status.ToString();
             statusText.text = GlobalData.ggameLobbyChannelList[Id].statusText;
 
             //group prefix is removed, and compare====//
@@ -57,6 +48,7 @@ public class CannelPannelIno : MonoBehaviour {
 
         }
 	}
+
     public void JoinChannel()
     {
         if (transform.Find("adctionBtn").Find("Text").GetComponent<Text>().text != "Join") return;
@@ -64,16 +56,11 @@ public class CannelPannelIno : MonoBehaviour {
         //====== case in player created channel, expire  ========================//
         if (GlobalData.ggameLobbyChannelList[Id].userNames[0] == XAYASettings.playerName) return;
 
-        GameObject.Find("Manager").GetComponent<GameChannelManager>().JoinGameChannel(GlobalData.ggameLobbyChannelList[Id].id);
+        ShipSDClient.Instance.JoinGameChannel(GlobalData.ggameLobbyChannelList[Id].id);
     }
     public void CloseChannel()
     {
         if (transform.Find("adctionBtn").Find("Text").GetComponent<Text>().text != "Close") return;
-
-        //====== case in player created channel, expire  ========================//
-        //if (GlobalData.ggameLobbyChannelList[Id].userNames[0] != GlobalData.gPlayerName.Substring(2)) return;
-
-        //GameObject.Find("Manager").GetComponent<GameChannelManager>().CloseGameChannel(GlobalData.ggameLobbyChannelList[Id].id);
-        GameObject.Find("Manager").GetComponent<GameChannelManager>().CloseGameChannel(GlobalData.ggameLobbyChannelList[Id].id);
+        ShipSDClient.Instance.CloseGameChannel(GlobalData.ggameLobbyChannelList[Id].id);
     }
 }

@@ -69,7 +69,6 @@
     <Compile Include="Assets\CielaSpike\Thread Ninja\ThreadNinjaMonoBehaviourExtensions.cs" />
     <Compile Include="Assets\GSPToggleManager.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\CannelPannelIno.cs" />
-    <Compile Include="Assets\ShipBattleGameAssets\Scripts\ChannelDeamonManager.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\Controller\BlockChainStatusView.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\Controller\BlockchainManager.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\Controller\GameChannelManager.cs" />
@@ -99,7 +98,6 @@
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\RPCUtils.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\ScreenManager.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\SeaBattleGameManager.cs" />
-    <Compile Include="Assets\ShipBattleGameAssets\Scripts\StartGameManager.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\SunkShipManage.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\UIScripts\HoverBtn.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\UIScripts\LeaderPanelInfo.cs" />
@@ -129,6 +127,7 @@
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\XAYACore\XAYADummyUISettings.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\XAYACore\XAYAJsonStructs.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\XAYACore\XAYASettings.cs" />
+    <Compile Include="Assets\ShipBattleGameAssets\Scripts\XAYACore\XAYAWaitForChange.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\XAYACore\XAYAWalletAPI.cs" />
     <Reference Include="UnityEngine">
       <HintPath>C:/Program Files/Unity/Hub/Editor/2019.4.0f1/Editor/Data/Managed/UnityEngine/UnityEngine.dll</HintPath>

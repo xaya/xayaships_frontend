@@ -94,6 +94,70 @@ namespace XAYA
             return false;
         }
 
+        public string XAYAWaitForChangeGameChannels(string lastKnownHash)
+        {
+            List<object> requestData = new List<object>();
+            JArray parameters = new JArray();
+            parameters.Add(lastKnownHash);
+
+            requestData.Add("waitforchange");
+            requestData.Add(parameters);
+
+            return this.HTTPReq(this.CreateJObject(requestData));
+        }
+
+        public string XAYAWaitForChange(string lastKnownHash)
+        {
+            List<object> requestData = new List<object>();
+            JArray parameters = new JArray();
+            parameters.Add(lastKnownHash);
+
+            requestData.Add("waitforchange");
+            requestData.Add(parameters);
+
+            return this.HTTPReq(this.CreateJObject(requestData), false, true);
+        }
+
+        public string XAYAGetBlockCount()
+        {
+            List<object> requestData = new List<object>();
+            JArray j = new JArray();
+
+            requestData.Add("getblockcount");
+            requestData.Add(j);
+
+            string result = "";
+
+            try
+            {
+                if (XAYASettings.isElectrum())
+                {
+                    result = this.HTTPXayaReq(this.CreateJObject(requestData), true, false);
+                }
+                else
+                {
+                    result = this.HTTPXayaReq(this.CreateJObject(requestData), true, true);
+                }
+            }
+            catch (WebException ex)
+            {
+                return "";
+            }
+
+            return result;
+        }
+
+        public string XAYAWaitForChangePending(int oldVersion)
+        {
+            List<object> requestData = new List<object>();
+            JArray parameters = new JArray();
+            parameters.Add(oldVersion);
+
+            requestData.Add("waitforpendingchange");
+            requestData.Add(parameters);
+
+            return this.HTTPReq(this.CreateJObject(requestData), false, true);
+        }
 
         public string ElectrumLoadWallet()
         {
@@ -330,6 +394,67 @@ namespace XAYA
             return result;
         }
 
+        public string ChannelXayaReqDirect(string requestString)
+        {
+            HttpWebRequest request = (HttpWebRequest)WebRequest.Create(XAYASettings.GetChannelUrl() + ":" + XAYASettings.gameChannelDefaultPort);
+
+            request.ConnectionGroupName = "xaya";
+            request.ServicePoint.ConnectionLimit = 60;
+
+            request.Method = "POST";
+            request.ContentType = "application/json-rpc";
+
+            if (XAYASettings.isElectrum() == false)
+            {
+                request.Credentials = new NetworkCredential(XAYASettings.ElectronWalletUsername, XAYASettings.ElectronWalletPassword);
+            }
+            else
+            {
+                request.Credentials = new NetworkCredential(XAYASettings.ElectrumWalletUsername, XAYASettings.ElectrumWalletPassword);
+            }
+
+            byte[] byteArray = Encoding.UTF8.GetBytes(requestString);
+            request.ContentLength = byteArray.Length;
+
+            bool networkError = false;
+
+            try
+            {
+                Stream dataStream = request.GetRequestStream();
+                dataStream.Write(byteArray, 0, byteArray.Length);
+                dataStream.Close();
+            }
+            catch
+            {
+                networkError = true;
+            }
+
+            if (networkError)
+            {
+                return "";
+            }
+
+            WebResponse webResponse = null;
+
+            try
+            {
+                webResponse = request.GetResponse();
+            }
+            catch (WebException ex)
+            {
+                Debug.Log("Exception: " + ex.ToString() + "|" + requestString);
+            }
+
+            if (webResponse == null)
+            {
+                return "";
+            }
+
+            StreamReader reader = new StreamReader(webResponse.GetResponseStream());
+            string response = reader.ReadToEnd();
+            return response;
+        }
+
         private string HTTPXayaReq(JObject job, bool ignoreDebugLog = false, bool ignoreElectrumFullpath = false, bool ignoreFiltering = false)
         {
             if (!XAYASettings.isElectrum())
@@ -420,6 +545,20 @@ namespace XAYA
             return response;
         }
 
+        public string GetCurrentChannelState()
+        {
+            List<object> requestData = new List<object>();
+
+            JObject container = new JObject();
+            JProperty player_id = new JProperty("id", 0);
+            container.Add(player_id);
+
+            requestData.Add("getcurrentstate");
+            requestData.Add(container);
+
+            return HTTPReq(this.CreateJObject(requestData));
+        }
+
         /* Creates a JObject containing the data to be sent in a JSONRPC HTTP request*/
         private JObject CreateJObject(List<object> data, bool isNotification = false)
         {
@@ -438,6 +577,55 @@ namespace XAYA
             }
 
             return requestObject;
+        }
+
+        private string ChannelDaemonRequest(JObject job)
+        {
+            string requestString = JsonConvert.SerializeObject(job, Formatting.None);
+            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(XAYASettings.GetChannelDaemonUrl());
+            webRequest.ServicePoint.ConnectionLimit = 60;
+            webRequest.ConnectionGroupName = "xaya";
+            webRequest.ContentType = "application/json-rpc";
+            webRequest.Method = "POST";
+
+            byte[] byteArray = Encoding.UTF8.GetBytes(requestString);
+            webRequest.ContentLength = byteArray.Length;
+
+            bool networkError = false;
+
+            try
+            {
+                Stream dataStream = webRequest.GetRequestStream();
+                dataStream.Write(byteArray, 0, byteArray.Length);
+                dataStream.Close();
+            }
+            catch (Exception ex)
+            {
+                Debug.Log("NETWORK ERROR: " + ex.ToString());
+                networkError = true;
+            }
+
+            if (networkError)
+            {
+                return "";
+            }
+
+            WebResponse webResponse = null;
+
+            try
+            {
+                webResponse = webRequest.GetResponse();
+            }
+            catch (WebException ex)
+            {
+                Debug.Log("Exception: " + ex.ToString() + "|" + requestString);
+            }
+
+            if (webResponse == null) return "";
+
+            StreamReader reader = new StreamReader(webResponse.GetResponseStream());
+            string response = reader.ReadToEnd();
+            return response;
         }
 
         /*Sends a JSONRPC HTTP request and receives the response*/
@@ -506,6 +694,19 @@ namespace XAYA
                 catch (Exception ex)
                 {
                     Debug.Log(ex.ToString());
+                }
+            }
+
+            if (address == XAYASettings.GameServerAddress)
+            {
+                try
+                {
+                    JObject resultJobject = JObject.Parse(response);
+                    string ghgt = resultJobject["result"]["height"].ToString();
+                    XAYASettings.gspHeightFetched = true;
+                }
+                catch (Exception ex)
+                {
                 }
             }
 
