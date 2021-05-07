@@ -14,19 +14,10 @@ namespace XAYA
      * open connections tracking, caching e.t.c. */
     public class RPCRequest
     {
-        //WARNING!!!! THIS ONE (GspIsConnected) NEEDS TO BE CHANGED, AS ITS GAME-SPECIFIC
-        //RIGHT NOW THIS IS CONFIGURED FOR SOCCER MANAGER ELITE
-        //BASICALLY HERE CAN GO ANY GSP RPC TO MAKE SURE, IT RETURNS VALID RESULT
         public bool GspIsConnected()
         {
             List<object> requestData = new List<object>();
-            JObject container = new JObject();
-            JProperty seasonID = new JProperty("season_id", 0);
-
-            container.Add(seasonID);
-
-            requestData.Add("get_news_feed");
-            requestData.Add(container);
+            requestData.Add(XAYASettings.simpleRPCToTestConnection);
 
             string result = "";
 
@@ -94,7 +85,7 @@ namespace XAYA
             return false;
         }
 
-        public string XAYAWaitForChangeGameChannels(string lastKnownHash)
+        public string XAYAWaitForChangeGameChannels(int lastKnownHash)
         {
             List<object> requestData = new List<object>();
             JArray parameters = new JArray();
@@ -103,7 +94,7 @@ namespace XAYA
             requestData.Add("waitforchange");
             requestData.Add(parameters);
 
-            return this.HTTPReq(this.CreateJObject(requestData));
+            return this.ChannelXayaReq(this.CreateJObject(requestData));
         }
 
         public string XAYAWaitForChange(string lastKnownHash)
@@ -394,6 +385,12 @@ namespace XAYA
             return result;
         }
 
+        public string ChannelXayaReq(JObject job)
+        {
+            string requestString = JsonConvert.SerializeObject(job, Formatting.None);
+            return ChannelXayaReqDirect(requestString);
+        }
+
         public string ChannelXayaReqDirect(string requestString)
         {
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(XAYASettings.GetChannelUrl() + ":" + XAYASettings.gameChannelDefaultPort);
@@ -548,6 +545,13 @@ namespace XAYA
         public string GetCurrentChannelState()
         {
             List<object> requestData = new List<object>();
+            requestData.Add("getcurrentstate");
+            return ChannelXayaReq(this.CreateJObject(requestData));
+        }
+
+        public string GetCurrentDaemonState()
+        {
+            List<object> requestData = new List<object>();
 
             JObject container = new JObject();
             JProperty player_id = new JProperty("id", 0);
@@ -577,55 +581,6 @@ namespace XAYA
             }
 
             return requestObject;
-        }
-
-        private string ChannelDaemonRequest(JObject job)
-        {
-            string requestString = JsonConvert.SerializeObject(job, Formatting.None);
-            HttpWebRequest webRequest = (HttpWebRequest)WebRequest.Create(XAYASettings.GetChannelDaemonUrl());
-            webRequest.ServicePoint.ConnectionLimit = 60;
-            webRequest.ConnectionGroupName = "xaya";
-            webRequest.ContentType = "application/json-rpc";
-            webRequest.Method = "POST";
-
-            byte[] byteArray = Encoding.UTF8.GetBytes(requestString);
-            webRequest.ContentLength = byteArray.Length;
-
-            bool networkError = false;
-
-            try
-            {
-                Stream dataStream = webRequest.GetRequestStream();
-                dataStream.Write(byteArray, 0, byteArray.Length);
-                dataStream.Close();
-            }
-            catch (Exception ex)
-            {
-                Debug.Log("NETWORK ERROR: " + ex.ToString());
-                networkError = true;
-            }
-
-            if (networkError)
-            {
-                return "";
-            }
-
-            WebResponse webResponse = null;
-
-            try
-            {
-                webResponse = webRequest.GetResponse();
-            }
-            catch (WebException ex)
-            {
-                Debug.Log("Exception: " + ex.ToString() + "|" + requestString);
-            }
-
-            if (webResponse == null) return "";
-
-            StreamReader reader = new StreamReader(webResponse.GetResponseStream());
-            string response = reader.ReadToEnd();
-            return response;
         }
 
         /*Sends a JSONRPC HTTP request and receives the response*/
@@ -683,26 +638,12 @@ namespace XAYA
             StreamReader reader = new StreamReader(webResponse.GetResponseStream());
             string response = reader.ReadToEnd();
 
-            if (address == XAYASettings.GameServerAddress)
-            {
-                try
-                {
-                    JObject resultJobject = JObject.Parse(response);
-                    string ghgt = resultJobject["result"]["height"].ToString();
-                    int currentBlockCount = Int32.Parse(ghgt);
-                }
-                catch (Exception ex)
-                {
-                    Debug.Log(ex.ToString());
-                }
-            }
 
             if (address == XAYASettings.GameServerAddress)
             {
                 try
                 {
                     JObject resultJobject = JObject.Parse(response);
-                    string ghgt = resultJobject["result"]["height"].ToString();
                     XAYASettings.gspHeightFetched = true;
                 }
                 catch (Exception ex)

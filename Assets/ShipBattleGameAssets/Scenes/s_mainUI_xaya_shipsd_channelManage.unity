@@ -14557,11 +14557,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: dcb774a718275b2409a25e25885bd5aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  shipsdPathPrefix: {fileID: 0}
-  shipsdPathBackfix: {fileID: 0}
-  gspRunnungToggle: {fileID: 0}
-  gameShootManager: {fileID: 0}
-  ourBoardManager: {fileID: 0}
+  gameShootManager: {fileID: 1192501680}
+  ourBoardManager: {fileID: 1046906589}
 --- !u!114 &1717249804
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -18075,7 +18072,7 @@ PrefabInstance:
     - target: {fileID: 7172596112995109548, guid: 81a96b9d88955d94fb6140c1932b1bf6,
         type: 3}
       propertyPath: m_RootOrder
-      value: 8
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 7172596112995109548, guid: 81a96b9d88955d94fb6140c1932b1bf6,
         type: 3}
@@ -18318,7 +18315,7 @@ PrefabInstance:
     - target: {fileID: 7428786577985016422, guid: 9402e5c6f111a5a47add38311c18cbc5,
         type: 3}
       propertyPath: m_RootOrder
-      value: 7
+      value: 4
       objectReference: {fileID: 0}
     - target: {fileID: 7428786577985016422, guid: 9402e5c6f111a5a47add38311c18cbc5,
         type: 3}

@@ -123,7 +123,6 @@ public class HexadecimalEncoding
     }
 }
 
-
 public class GameUserManager : MonoBehaviour
 {
     [SerializeField]
@@ -179,9 +178,6 @@ public class GameUserManager : MonoBehaviour
 
     [SerializeField]
     GameObject messageInform;
-
-    //[SerializeField]
-    //CreateChannelBtn m_channelPannelManager;
 
     [SerializeField]
     GameObject menuObjects;
@@ -324,7 +320,6 @@ public class GameUserManager : MonoBehaviour
         m_gamePlayboard.SetActive(false);
         m_gamePlayboard.SetActive(true);        
         ShowInfo("START GAME.\n ARRANGE YOUR SHIPS!");
-
     }
   
     public void InitGameBoard()

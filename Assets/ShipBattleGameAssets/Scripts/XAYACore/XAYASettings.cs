@@ -9,36 +9,42 @@ namespace XAYA
 
     public class XAYASettings
     {
+        //Main Game
         public static LoginMode LoginMode = LoginMode.Simple;
         public static string gameID = "xs"; //xs goes for Xayaships
+        public static string simpleRPCToTestConnection = "getcurrentstate"; //(without any params)
+        public static string DaemonName = "shipsd"; // exe file name of game daemon
+        public static string rpcCommandJsonFile = "channel.json";
 
+        //XID
         public static string chatID = "sme"; //xampp chat server prefix
         public const string chatLicense = @"eJxkkcluwjAURX8FsUWtCYMglbHKECKmEAoEyM7EJjIZHDwQkq8vKi0surs65+m9Kz04ZwFNJa3ckjiVvSoO3yQ/qRwL+hE/VBVBV3CiAzUhaIGVYDcIXgSuNE4VUwUyIHhmONRS8YQKBB2cUNRPQxrzypDHXLKEQ/BD4ZAnGU4L1NeKpzzhWlZ2XMREVuaKQPCnoZVgFiOckuLzhgv8zu4bHuw+9Ly0zQhW1LplTNDRPaFGvWEYDaMOwT8F1yxMsdKCormmrjPYh9moZnYmJrMv4pytDl+0xa1SeK45EBmRneZhv2IiX0Vtq5wU9cwvvcTJLSteTsHIHR83rObNgD4JQwyWwTpvLuSlHXpXw+tYvnTW5k77MmgsZ3EnKsOuvdle+45j1bvsFIDcvowWl2g55bOj0So3oFZySYLJwC71mHC99s/X/TbqQfDqDcHv89C3AA==";
         public const string chatDomainName = "chat.xaya.io";
         public const string defaultChatRoomID = "sme@muc.chat.xaya.io";
+        public static bool launchChat = true; //true if we want dummy UI to also launch chat
 
-        public static string DaemonName = "shipsd"; // exe file name of game daemon
-        public static string rpcCommandJsonFile = "channel.json";
-
+        //Boradcaster
         public static bool launchXAMPPbroadcastService = true; //we use this for games with gamechannels
         public static string XAMPPbroadcastURL = "127.0.0.1";
         public static string XAMPPbroadcastPORT = "10042";
         public static int gameChannelDefaultPort = 29060;
 
+        //Other
         public static bool ignoreChatDebugLog = true;
-
-        public static bool launchChat = true; //true if we want dummy UI to also launch chat
-
+       
+        //Values below are filled automatically
         public static string GameServerAddress = ""; //game's GSP address 
         public static string WalletServerAddress = ""; //electron or electrum wallet address
         public static string XIDServerAddress = ""; //address of XID, which is either integrated into electron, or xid-light running alongside electrum.exe
-
         public static string ElectronWalletIPAddress, ElectronWalletPort, ElectronWalletUsername, ElectronWalletPassword, GameDaemonIP, GameDaemonPort, ElectrumWalletIPAddress,  ElectrumWalletUsername, ElectrumWalletPassword, ElectrumWalletPort, XIDAuthPassword = "";
-
         public static bool playerLoggedIn = false;
         public static string playerName = "";
-
         public static bool gspHeightFetched = false; //We set this tur true on the first valid fetch
+
+        //LiteMode (filled automatically
+
+        public static string litePassword;
+        public static string liteSigned;
 
         public static string GetUserName()
         {
@@ -71,12 +77,26 @@ namespace XAYA
 
         public static string GetChannelDaemonUrl()
         {
-            return "http" + "://" + ElectronWalletUsername + ":" + ElectronWalletPassword + "@" + GSPIP();
+            if (isElectrum() == false)
+            {
+                return "http" + "://" + ElectronWalletUsername + ":" + ElectronWalletPassword + "@" + GSPIP();
+            }
+            else
+            {
+                return "http" + "://" + ElectrumWalletUsername + ":" + ElectrumWalletPassword + "@" + GSPIP();
+            }
         }
 
         public static string GetChannelUrl()
         {
-            return "http" + "://" + ElectronWalletUsername + ":" + ElectronWalletPassword + "@" + XAMPPbroadcastURL;
+            if (isElectrum() == false)
+            {
+                return "http" + "://" + ElectronWalletUsername + ":" + ElectronWalletPassword + "@" + XAMPPbroadcastURL;
+            }
+            else
+            {
+                return "http" + "://" + ElectrumWalletUsername + ":" + ElectrumWalletPassword + "@" + XAMPPbroadcastURL;
+            }
         }
 
         public static string GSPIP()
@@ -86,7 +106,14 @@ namespace XAYA
 
         public static string GetServerUrl()
         {
-            return "http://" + ElectronWalletUsername + ":" + ElectronWalletPassword + "@" + ElectronWalletIPAddress + ":" + ElectronWalletPort + "/wallet/game.dat";
+            if (isElectrum() == false)
+            {
+                return "http://" + ElectronWalletUsername + ":" + ElectronWalletPassword + "@" + ElectronWalletIPAddress + ":" + ElectronWalletPort + "/wallet/game.dat";
+            }
+            else
+            {
+                return "http://" + XAYASettings.ElectronWalletIPAddress + ":" + XAYASettings.ElectrumWalletPort + "/xaya/compatibility";
+            }
         }
 
         public static void FillAllConnectionSettings()

@@ -68,7 +68,12 @@ namespace XAYA
             string texid = request.XAYANameUpdateDirect(XAYASettings.playerName, dataVal);
         }
 
-        public string GetCurrentStateOnly()
+        public string GetCurrentStateDaemon()
+        {
+            return request.GetCurrentDaemonState();
+        }
+
+        public string GetCurrentStateChannel()
         {
             return request.GetCurrentChannelState();
         }

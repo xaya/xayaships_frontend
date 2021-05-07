@@ -78,6 +78,7 @@ namespace XAYA
         private bool retryXIDTest = false;
         private bool registeringXIDName = false;
         private bool XIDNameIsRegistered = false;
+        private bool charonWaitingForXIDReply = false;
 
         private Text informationFeedbackLastKnow;
 
@@ -492,208 +493,45 @@ namespace XAYA
          * also poroperly sign username with XID, hence function looks a little bit bulky*/
         public IEnumerator LaunchCharon(string username, System.Action<string> callback)
         {
-            bool xidNameResolved = false;
-            bool waitingForReply = false;
-
             RPCRequest r = new RPCRequest();
-
-            PlayerXIDResult xidResults = null;
-            int tries = 0;
-            while (xidNameResolved == false)
-            {
-
-                try
-                {
-                    /*Ok, first thing first, we want to get chat names states*/
-                    r = new RPCRequest();
-                    xidResults = r.XIDNameState(username).result;
-
-                    if (xidResults.data.signers.Count != 0)
-                    {
-                        /*We have no XID name registered, so we must don it first*/
-                        xidNameResolved = true;
-                    }
-                    else
-                    {
-                        if (waitingForReply == false)
-                        {
-                            r = new RPCRequest();
-                            callback("NAME NOT REGISTERED");
-
-                            string newAddresss = r.GetNewAddressForXIDChat();
-
-                            JObject result = JObject.Parse(newAddresss);
-                            string resAddress = result["result"].ToString();
-
-                            JObject data = JObject.Parse("{\"g\":{\"id\":{\""+ XAYASettings.gameID + "\":{\"g\":[\"" + resAddress + "\"]}}}}");
-                            r.XAYANameUpdateDirect(username, data);
-
-                            waitingForReply = true;
-                            tries++;
-                        }
-                    }
-
-                    if (tries >= 3 && waitingForReply == false)
-                    {
-                        callback("Error: " + "XID FAILED TO RESOLVE");
-                        break;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    callback("Error: " + ex.ToString());
-                }
-
-                yield return new WaitForSeconds(10.0f);
-            }
-
-            /*Now that we have our name registered, and signer address retrieved, we are good to proceed logging in*/
 
             string userDirPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             string workingDir = userDirPath + "/Electrum-CHI";
             string stubs = Application.streamingAssetsPath + "/Daemon/" + XAYASettings.rpcCommandJsonFile;
 
-            string passwordD = "fillemeplease";
-            string authMessage = r.AuthWithWallet(username, XAYASettings.chatDomainName, out passwordD);
+            Process myProcessDaemonCharon = new Process();
 
-            bool signSolved = false;
-            string singResult = "";
-
-
-            /*If name was transferred, we might need to iterate the lists and resign the mssage*/
-
-            for (int f = 0; f < xidResults.data.signers[0].addresses.Count; f++)
+            try
             {
-                singResult = r.SingMessage(xidResults.data.signers[0].addresses[f], authMessage);
+                string ourXIDpassword = r.SetAuthStignature(XAYASettings.litePassword, XAYASettings.liteSigned);
+                string ourXIDLogin = HexadecimalEncoding.ToHexString(username) + "@" + XAYASettings.chatDomainName;
 
-                if (singResult != "")
-                {
-                    signSolved = true;
-                }
+                XAYASettings.XIDAuthPassword = ourXIDpassword;
 
-                yield return null;
+                myProcessDaemonCharon.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
+                myProcessDaemonCharon.StartInfo.CreateNoWindow = true;
+                myProcessDaemonCharon.StartInfo.UseShellExecute = false;
+                myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--server_jid " + XAYASettings.chatID + "@" + XAYASettings.chatDomainName + " --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --backend_version \"0.3\" --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\" --alsologtostderr");
+
+                myProcessDaemonCharon.StartInfo.FileName = Application.streamingAssetsPath + "/Daemon/charon-client.exe";
+                myProcessDaemonCharon.StartInfo.WorkingDirectory = workingDir;
+                myProcessDaemonCharon.EnableRaisingEvents = true;
+            }
+            catch (Exception ex)
+            {
+                callback("Error: " + ex.ToString());
             }
 
-            if (signSolved == false)
+            if (myProcessDaemonCharon.Start())
             {
-                int previousCount = xidResults.data.signers.Count;
-                xidNameResolved = false;
-                tries = 0;
-
-                while (xidNameResolved == false)
-                {
-                    try
-                    {
-                        /*Ok, first thing first, we want to get chat names states*/
-
-                        r = new RPCRequest();
-                        xidResults = r.XIDNameState(username).result;
-
-                        if (xidResults.data.signers.Count != previousCount)
-                        {
-                            /*We have no XID name registered, so we must don it first*/
-                            xidNameResolved = true;
-                        }
-                        else
-                        {
-                            //connectionStatus.text = "Waiting for XID to register the name...";
-
-                            if (waitingForReply == false)
-                            {
-                                r = new RPCRequest();
-
-                                callback("NAME NOT REGISTERED");
-                                string newAddresss = r.GetNewAddressForXIDChat();
-
-                                JObject result = JObject.Parse(newAddresss);
-                                string resAddress = result["result"].ToString();
-
-                                JObject data = JObject.Parse("{\"g\":{\"id\":{\"" + XAYASettings.gameID + "\":{\"g\":[\"" + resAddress + "\"]}}}}");
-                                r.XAYANameUpdateDirect(username, data);
-
-                                waitingForReply = true;
-                                tries++;
-                            }
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        callback("Error: " + ex.ToString());
-                    }
-
-                    if (tries >= 3 && waitingForReply == false)
-                    {
-                        callback("Error: " + "XID FAILED TO RESOLVE");
-                        break;
-                    }
-
-                    yield return new WaitForSeconds(10.0f);
-                }
-
-                signSolved = false;
-                singResult = "";
-
-                for (int f = 0; f < xidResults.data.signers[0].addresses.Count; f++)
-                {
-                    try
-                    {
-                        singResult = r.SingMessage(xidResults.data.signers[0].addresses[f], authMessage);
-                    }
-                    catch (Exception ex)
-                    {
-                        callback("Error: " + ex.ToString());
-                    }
-
-                    if (singResult != "")
-                    {
-                        signSolved = true;
-                    }
-
-                    yield return null;
-                }
-
-            }
-            /*at this point, we are probably good co tontinue*/
-
-            if (signSolved == false)
-            {
-                //connectionStatus.text = "Failed to resolve XID signing...";
+                callback("WAITING TO SOLVE GSP");
             }
             else
             {
-                Process myProcessDaemonCharon = new Process();
-
-                try
-                {
-                    string ourXIDpassword = r.SetAuthStignature(passwordD, singResult);
-                    string ourXIDLogin = HexadecimalEncoding.ToHexString(username) + "@" + XAYASettings.chatDomainName;
-
-                    XAYASettings.XIDAuthPassword = ourXIDpassword;
-
-                    myProcessDaemonCharon.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
-                    myProcessDaemonCharon.StartInfo.CreateNoWindow = true;
-                    myProcessDaemonCharon.StartInfo.UseShellExecute = false;
-                    myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--server_jid "+XAYASettings.chatID+"@"+XAYASettings.chatDomainName+" --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --backend_version \"0.3\" --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\" --alsologtostderr");
-
-                    myProcessDaemonCharon.StartInfo.FileName = Application.streamingAssetsPath + "/Daemon/charon-client.exe";
-                    myProcessDaemonCharon.StartInfo.WorkingDirectory = workingDir;
-                    myProcessDaemonCharon.EnableRaisingEvents = true;
-                }
-                catch (Exception ex)
-                {
-                    callback("Error: " + ex.ToString());
-                }
-
-                if (myProcessDaemonCharon.Start())
-                {
-                    callback("WAITING TO SOLVE GSP");
-                }
-                else
-                {
-                    callback("FAIL");
-                }
-
+                callback("FAIL");
             }
+
+            yield return null;
         }
 
         public void LaunchXMPPServer()
@@ -726,38 +564,131 @@ namespace XAYA
                 informationFeedback.text = "Testing, if XID is present";
             }
 
-            try
+            string username = XAYASettings.playerName;
+
+            RPCRequest r = new RPCRequest();
+            PlayerXID nameData = r.XIDNameState(username);
+
+            if (nameData == null || (nameData.result.data.addresses.Count == 0 && nameData.result.data.signers.Count == 0))
             {
-                string username = XAYASettings.playerName;
-
-                RPCRequest r = new RPCRequest();
-                PlayerXID nameData = r.XIDNameState(username);
-
-                if (nameData == null || (nameData.result.data.addresses.Count == 0 && nameData.result.data.signers.Count == 0))
+                if (registeringXIDName == false)
                 {
-                    if (registeringXIDName == false)
-                    {
-                        registeringXIDName = true;
-                        string newAddresss = r.GetNewAddressForXIDChat();
+                    registeringXIDName = true;
+                    string newAddresss = r.GetNewAddressForXIDChat();
 
-                        JObject result = JObject.Parse(newAddresss);
-                        string resAddress = result["result"].ToString();
+                    JObject result = JObject.Parse(newAddresss);
+                    string resAddress = result["result"].ToString();
 
-                        JObject data = JObject.Parse("{\"g\":{\"id\":{\"s\":{\"g\":[\"" + resAddress + "\"]}}}}");
-                        r.XAYANameUpdateDirect(username, data);
+                    JObject data = JObject.Parse("{\"g\":{\"id\":{\"s\":{\"g\":[\"" + resAddress + "\"]}}}}");
+                    r.XAYANameUpdateDirect(username, data);
 
-                        informationFeedback.text = "Issued TX to register XID, please wait for block confirmations...";
-                    }
-                }
-                else
-                {
-                    registeringXIDName = false;
-                    XIDNameIsRegistered = true;
+                    informationFeedback.text = "Issued TX to register XID, please wait for block confirmations...";
                 }
             }
-            catch (Exception ex)
+            else
             {
-                informationFeedback.text = ex.ToString() + ", retrying...";
+                registeringXIDName = false;
+                XIDNameIsRegistered = true;
+
+                if (XAYASettings.isElectrum())
+                {
+
+                    XAYASettings.litePassword = "fillemeplease";
+                    XAYASettings.liteSigned = r.AuthWithWallet(username, XAYASettings.chatDomainName, out XAYASettings.litePassword);
+
+                    bool signSolved = false;
+                    string singResult = "";
+
+
+                    /*If name was transferred, we might need to iterate the lists and resign the mssage*/
+
+                    for (int f = 0; f < nameData.result.data.signers[0].addresses.Count; f++)
+                    {
+                        singResult = r.SingMessage(nameData.result.data.signers[0].addresses[f], XAYASettings.liteSigned);
+
+                        if (singResult != "")
+                        {
+                            signSolved = true;
+                        }
+
+                        yield return null;
+                    }
+
+                    if (signSolved == false)
+                    {
+                        int previousCount = nameData.result.data.signers.Count;
+                        bool xidNameResolved = false;
+                        int tries = 0;
+
+                        while (xidNameResolved == false)
+                        {
+                            try
+                            {
+                                /*Ok, first thing first, we want to get chat names states*/
+
+                                r = new RPCRequest();
+                                nameData = r.XIDNameState(username);
+
+                                if (nameData.result.data.signers.Count != previousCount)
+                                {
+                                    /*We have no XID name registered, so we must don it first*/
+                                    xidNameResolved = true;
+                                }
+                                else
+                                {
+                                    if (registeringXIDName == false)
+                                    {
+                                        r = new RPCRequest();
+                                        string newAddresss = r.GetNewAddressForXIDChat();
+
+                                        JObject result = JObject.Parse(newAddresss);
+                                        string resAddress = result["result"].ToString();
+
+                                        JObject data = JObject.Parse("{\"g\":{\"id\":{\"" + XAYASettings.gameID + "\":{\"g\":[\"" + resAddress + "\"]}}}}");
+                                        r.XAYANameUpdateDirect(username, data);
+
+                                        registeringXIDName = true;
+                                        tries++;
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                            }
+
+                            if (tries >= 3 && registeringXIDName == false)
+                            {
+
+                                break;
+                            }
+
+                            yield return new WaitForSeconds(10.0f);
+                        }
+
+                        signSolved = false;
+                        singResult = "";
+
+                        for (int f = 0; f < nameData.result.data.signers[0].addresses.Count; f++)
+                        {
+                            try
+                            {
+                                singResult = r.SingMessage(nameData.result.data.signers[0].addresses[f], XAYASettings.liteSigned);
+                            }
+                            catch (Exception ex)
+                            {
+
+                            }
+
+                            if (singResult != "")
+                            {
+                                signSolved = true;
+                            }
+
+                            yield return null;
+                        }
+
+                    }
+                }
             }
 
             yield return null;
@@ -808,12 +739,29 @@ namespace XAYA
                         }
                     }
                 }
+                else
+                {
+                    if (charonWaitingForXIDReply == false)
+                    {
+                        RPCRequest r = new RPCRequest();
+                        string newAddresss = r.GetNewAddressForXIDChat();
+
+                        JObject result = JObject.Parse(newAddresss);
+                        string resAddress = result["result"].ToString();
+
+                        JObject data = JObject.Parse("{\"g\":{\"id\":{\"s\":{\"g\":[\"" + resAddress + "\"]}}}}");
+                        r.XAYANameUpdateDirect(XAYASettings.playerName, data);
+
+                        charonWaitingForXIDReply = true;
+                    }
+
+                    retryXIDTest = true;
+                }
             }
         }
 
         public void SignalWalletError(string error)
         {
-            //ConnectionStatusSolver.Instance.IndicatorXaya.color = new Color32(255, 161, 0, 255);
             UnityEngine.Debug.LogError(error);
         }
 

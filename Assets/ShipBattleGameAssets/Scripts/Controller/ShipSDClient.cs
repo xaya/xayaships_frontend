@@ -22,15 +22,6 @@ public class DisputeStatus
 
 public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
 {
-    [SerializeField]
-    UnityEngine.UI.Text shipsdPathPrefix;
-    [SerializeField]
-    UnityEngine.UI.Text shipsdPathBackfix;
-
-    [SerializeField]
-    UnityEngine.UI.Toggle gspRunnungToggle;
-    //[SerializeField]
-      //UnityEngine.UI.InputField inputGSPStatus;
 
     GameObject m_errorBox = null;
 
@@ -47,6 +38,11 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
     public void OnWaitForChangeNewBlock()
     {
         GetCurrentStateFromFreshBlock();
+    }
+
+    public void OnWaitForChangeGameChannel()
+    {
+        GetCurrentStateFromFreshChannel();
     }
 
     public void OnWaitForChangeTID(PendingStateData latestPendingData)
@@ -248,6 +244,8 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
 
         RPCRequest request = new RPCRequest();
         request.ChannelXayaReqDirect(cmdstr);
+
+        Debug.Log("WE SHOOOOOOOT!!!");
     }
 
     public void RevealPositionRequest(string channelId)
@@ -286,7 +284,7 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
         request.ChannelXayaReqDirect(cmdstr);
     }
 
-    public void SetGameChannelSateFromJson(string channelId, string result)
+    public void SetGameChannelSateFromJson(string result)
     {
         JObject jresult = JObject.Parse(result) as JObject;
         jresult = jresult["result"] as JObject;
@@ -370,11 +368,13 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
         //================= **** Shooting result **** ===================================//
         JObject jParsed = jresult["current"]["state"] as JObject;
         jParsed = jParsed["parsed"] as JObject;
-        Debug.Log(jParsed.ToString());
+
         //if (jParsed == null || jParsed["phase"].ToString()!="shoot") return;
         if (jParsed == null) return;
         JArray jGuesses = jParsed["guesses"] as JArray;
-        Debug.Log(jGuesses.ToString());
+
+        if (jGuesses == null) return;
+
         if (jGuesses != null) SetShootStatus(jGuesses);
 
         //============== ******* Winner state ****** =================//
@@ -397,23 +397,19 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
         RegisterForWaitForChange();
     }
 
-    // Update is called once per frame
-    void Update()
+    public void GetCurrentStateFromFreshChannel()
     {
-        if (XAYASettings.playerLoggedIn)
+        string currentState = GameChannelManager.Instance.GetCurrentStateChannel();
+
+        if (currentState != "")
         {
-            if (!bCurrentLive && (Time.time - runTime) > 15 && GetComponent<GameUserManager>() && gspRunnungToggle.isOn)
-            {
-                Debug.Log("GSP restart!!");
-                KillGSP();
-                GlobalData.ErrorPopup("GSP failed to start.");
-            }
+            SetGameChannelSateFromJson(currentState);
         }
     }
 
     public void GetCurrentStateFromFreshBlock()
     {
-        string currentState = GameChannelManager.Instance.GetCurrentStateOnly();
+        string currentState = GameChannelManager.Instance.GetCurrentStateDaemon();
         retStatusJson ret = JsonConvert.DeserializeObject<retStatusJson>(currentState);
 
         if (ret != null)
@@ -487,7 +483,6 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
                 //=========================    ==============================//                    
                 if(!XAYADummyUI.Instance.IsExistName(opponentName))    //=== case  only other user====//
                 {
-                    Debug.Log("liveFlag:" + GlobalData.bLiveChannel);
                       if (!GlobalData.bLiveChannel && !GlobalData.IsIgnoreChannel(channelInfo.id))
                     //   if (!GlobalData.bLiveChannel)
                         {
@@ -538,7 +533,7 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
     }
     public void GetCurrentInitialState()
     {
-        string currentState = GameChannelManager.Instance.GetCurrentStateOnly();
+        string currentState = GameChannelManager.Instance.GetCurrentStateDaemon();
         retStatusJson ret = JsonConvert.DeserializeObject<retStatusJson>(currentState);
 
         GlobalData.gblockhash = ret.result.blockhash;
@@ -546,32 +541,6 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
         GlobalData.gblockStatusStr = ret.result.state;
         bCurrentLive = true;
         SetGameSateFromJson(currentState);
-    }
-
-    public bool KillGSP()
-    {
-        gspRunnungToggle.isOn = false;
-        try
-        {
-            foreach (System.Diagnostics.Process p in System.Diagnostics.Process.GetProcessesByName(XAYASettings.DaemonName))
-            {
-                try
-                {                    
-                        p.Kill();
-                        p.WaitForExit();
-                        print("ships-sd is killed.");                     
-                }
-                catch (System.Exception e)
-                {
-                    print("Mini exception when trying to list the name " + e);
-                }
-            }
-        }
-        catch (System.Exception e)
-        {
-            print("Exception caught " + e);
-        }
-        return false;
     }
 }
 public class channels

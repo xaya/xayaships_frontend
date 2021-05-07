@@ -23,13 +23,15 @@ namespace XAYA
         void OnWaitForChangeTID(PendingStateData latestPendingData);
 
         bool SerializedPendingIsDifferent(PendingStateData latestPendingData);
+
+        void OnWaitForChangeGameChannel();
     }
 
     public class XAYAWaitForChange : MonoBehaviour
     {
         string lastWaitForChangeResult = "";
-        string lastWaitForChangeResultChannels = "";
         int lastWaitForPendingChangeResult = -1;
+        int lastWaitForChangeResultChannels = -1;
         int lastBlockHeight;
         PendingStateData lastPendingData;
 
@@ -37,7 +39,6 @@ namespace XAYA
         public List<MonoBehaviour> objectsRegisteredForWaitForChange;
         [HideInInspector]
         public List<IXAYAWaitForChange> objectsRegisteredForWaitForChangeIntefaceOnly = new List<IXAYAWaitForChange>();
-
 
         public static XAYAWaitForChange Instance;
 
@@ -52,19 +53,13 @@ namespace XAYA
         // Use this for initialization
         public void StartRunning(bool forGame, bool forPending, bool forChannels)
         {
-            if(forGame && forChannels)
-            {
-                UnityEngine.Debug.LogError("Fatal error, can't listen to both, no reason to do so");
-                return;
-            }
-
-            if (forGame)
+            if (forPending)
             {
                 Task task;
                 this.StartCoroutineAsync(WaitForChangePendings(), out task);
             }
 
-            if (forPending)
+            if (forGame)
             {
                 Task task2;
                 this.StartCoroutineAsync(WaitForChange(), out task2);
@@ -81,51 +76,37 @@ namespace XAYA
         {
             while (true)
             {
+                yield return Ninja.JumpBack;
                 RPCRequest r = new RPCRequest();
-                string waitForChange = r.XAYAWaitForChangeGameChannels(lastWaitForChangeResultChannels);
-                string knownHash = "";
+                string reply = r.XAYAWaitForChangeGameChannels(lastWaitForChangeResultChannels);
 
-                if (waitForChange != "")
+                if (reply != "" && !reply.Contains("null"))
                 {
-                    JObject resultJobjectWF = JObject.Parse(waitForChange);
-                    if (resultJobjectWF["result"] != null)
+                    JObject result = JObject.Parse(reply);
+                    string versionString = result["result"]["version"].ToString();
+
+                    int oldVersion = 0;
+                    int.TryParse(versionString, out oldVersion);
+
+                    yield return Ninja.JumpToUnity;
+
+                    if (lastWaitForChangeResultChannels != oldVersion)
                     {
-                        knownHash = resultJobjectWF["result"].ToString();
-                    }
-                }
+                        lastWaitForChangeResultChannels = oldVersion;
 
-                yield return Ninja.JumpToUnity;
-                yield return new WaitForSeconds(0.1f);
-
-                if (lastWaitForChangeResultChannels != knownHash)
-                {
-                    lastWaitForChangeResultChannels = knownHash;
-
-
-                    for (int s = 0; s < objectsRegisteredForWaitForChange.Count; s++)
-                    {
-                        IXAYAWaitForChange wfc = (IXAYAWaitForChange)objectsRegisteredForWaitForChange[s].GetComponent(typeof(IXAYAWaitForChange));
-                        if (wfc != null)
+                        for (int s = 0; s < objectsRegisteredForWaitForChange.Count; s++)
                         {
-                            if (objectsRegisteredForWaitForChange[s].gameObject != null && objectsRegisteredForWaitForChange[s].gameObject.activeInHierarchy)
+                            IXAYAWaitForChange wfc = (IXAYAWaitForChange)objectsRegisteredForWaitForChange[s].GetComponent(typeof(IXAYAWaitForChange));
+                            if (wfc != null)
                             {
-                                wfc.OnWaitForChangeNewBlock();
+                                if (objectsRegisteredForWaitForChange[s].gameObject != null && objectsRegisteredForWaitForChange[s].gameObject.activeInHierarchy)
+                                {
+                                    wfc.OnWaitForChangeGameChannel();
+                                }
                             }
                         }
                     }
-
-                    for (int s = 0; s < objectsRegisteredForWaitForChangeIntefaceOnly.Count; s++)
-                    {
-                        IXAYAWaitForChange wfc = (IXAYAWaitForChange)objectsRegisteredForWaitForChangeIntefaceOnly[s];
-                        if (wfc != null)
-                        {
-                            wfc.OnWaitForChangeNewBlock();
-                        }
-                    }
                 }
-
-                yield return new WaitForSeconds(0.1f);
-                yield return Ninja.JumpBack;
             }
         }
 

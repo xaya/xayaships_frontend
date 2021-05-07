@@ -30,6 +30,7 @@ namespace XAYA
         private RPCRequest request;
 
         private bool waitingForXIDToSolve = false;
+        private bool launchingCharon = false;
 
         private List<string> existingNamesFiltered;
         public static XAYADummyUI Instance;
@@ -231,31 +232,37 @@ namespace XAYA
             usernameSelectionList.AddOptions(existingNamesFiltered);
         }
 
+        private void GamePrelaunchRoutines()
+        {
+            if (XAYASettings.launchXAMPPbroadcastService == true)
+            {
+                XAYAWalletAPI.Instance.LaunchXMPPServer();
+            }
+
+            if (XAYASettings.launchChat == true)
+            {
+                UIManagerChat.Instance.LaunchChat();
+            }
+
+            UsernameSelectionScreen.SetActive(false);
+            UsernameLoadingInformationPanel.SetActive(false);
+            GlobalData.bLogin = true;
+
+            ShipSDClient.Instance.SetUpShipClient();
+            XAYAWaitForChange.Instance.StartRunning(true, false, true);
+
+        }
+
         public void ContinueLogingAfterXIDVerification()
         {
             if (XAYASettings.LoginMode == LoginMode.Advanced)
             {
-                if (XAYASettings.launchXAMPPbroadcastService == true)
-                {
-                    XAYAWalletAPI.Instance.LaunchXMPPServer();
-                }
-
-                if(XAYASettings.launchChat == true)
-                {
-                    UIManagerChat.Instance.LaunchChat();
-                }
-
-                UsernameSelectionScreen.SetActive(false);
-                UsernameLoadingInformationPanel.SetActive(false);
-                GlobalData.bLogin = true;
-
-                ShipSDClient.Instance.SetUpShipClient();
-                XAYAWaitForChange.Instance.StartRunning(false, false, true);
+                GamePrelaunchRoutines();
             }
             else
             {
-                //StartCoroutine(LaunchCharon());
-            }            
+                StartCoroutine(LaunchCharon());
+            }
         }
 
         public void OnExistingNameSelection(int nameIndex)
@@ -269,7 +276,7 @@ namespace XAYA
             }
         }
 
-        /*
+        
         IEnumerator LaunchCharon()
         {
             if (launchingCharon)
@@ -278,18 +285,13 @@ namespace XAYA
             }
             else
             {
-                loadingText.text = "Launching Charon...";
+                UsernameLoadingInformationalText.text = "Launching Charon...";
                 launchingCharon = true;
-                StartCoroutine(XAYAWalletAPI.Instance.LaunchCharon(usernameHardcoded, (myReturnValue) =>
+                StartCoroutine(XAYAWalletAPI.Instance.LaunchCharon(XAYASettings.playerName, (myReturnValue) =>
                 {
                     if (myReturnValue.Contains("Error"))
                     {
                         LaunchingCharonError(myReturnValue);
-                    }
-
-                    if (myReturnValue == "NAME NOT REGISTERED")
-                    {
-                        chatNameIsRegistered = false;
                     }
 
                     if (myReturnValue == "WAITING TO SOLVE GSP")
@@ -305,7 +307,7 @@ namespace XAYA
 
         IEnumerator WaitForGSPToSolve()
         {
-            loadingText.text = "Waiting Charon...";
+            UsernameLoadingInformationalText.text = "Waiting Charon...";
             ConnectionStatusSolver ss = GameObject.FindObjectOfType<ConnectionStatusSolver>();
             ss.charonAllowsToTest = true;
 
@@ -314,35 +316,8 @@ namespace XAYA
                 yield return null;
             }
 
-            LaunchMainGameLoadCycle();
-        }*/
-
-        /*
-
-        void LaunchMainGameLoadCycle()
-        {
-            //All done mostly, but lets see, if our name properly existed with XID
-
-            if (chatNameIsRegistered == false)
-            {
-                StartCoroutine(TestIfXIDNamePresent());
-            }
-            else
-            {
-                Done();
-            }
+            GamePrelaunchRoutines();
         }
-
-        void Done()
-        {
-            //We can start calling the game RPCs now to fetch game data and go on
-            loadingText.text = "Done.";
-
-            if (XAYASettings.isElectrum)
-            {
-                dummyWallet.gameObject.SetActive(true);
-            }
-        }*/
 
         void LanchDaemonIfNotRunningAlready()
         {
