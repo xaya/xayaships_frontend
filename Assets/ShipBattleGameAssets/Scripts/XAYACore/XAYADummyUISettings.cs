@@ -7,7 +7,7 @@ namespace XAYA
 {
     public class XAYADummyUISettings : MonoBehaviour
     {
-        public XAYADummyUI dummyUI;
+        public MonoBehaviour realUIScriptReference;
 
         public InputField WalletIPAddress;
         public InputField WalletPort;
@@ -20,6 +20,12 @@ namespace XAYA
         public GameObject buttonSimpleMode;
         public GameObject buttonAdvancedMode;
 
+        public static XAYADummyUISettings Instance;
+
+        void Start()
+        {
+            Instance = this;
+        }
 
         void OnEnable()
         {
@@ -39,6 +45,23 @@ namespace XAYA
                 buttonSimpleMode.SetActive(true);
                 buttonAdvancedMode.SetActive(false);
             }
+
+            FillFromPrefs();
+        }
+
+        public void FillFromPrefs()
+        {
+            string dataPrefix = "";
+
+            if (XAYASettings.LoginMode == LoginMode.Simple)
+            {
+                dataPrefix = XAYASettings.gameID + "electrum";
+            }
+            else
+            {
+                dataPrefix = XAYASettings.gameID + "advanced";
+            }
+
 
             WalletIPAddress.text = PlayerPrefs.GetString(dataPrefix + "_ip", "127.0.0.1");
             WalletPort.text = PlayerPrefs.GetString(dataPrefix + "_port", "8396");
@@ -70,12 +93,12 @@ namespace XAYA
             PlayerPrefs.SetString(dataPrefix + "_portGSP", GSPPort.text);
             PlayerPrefs.Save();
 
-            dummyUI.CloseSettingsInnerPanel();
+            realUIScriptReference.BroadcastMessage("CloseSettingsInnerPanel");
         }
 
         public void Close()
         {
-            dummyUI.CloseSettingsInnerPanel();
+            realUIScriptReference.BroadcastMessage("CloseSettingsInnerPanel");
         }
 
         public void SwitchWalletMode()

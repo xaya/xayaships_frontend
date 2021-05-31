@@ -11,21 +11,21 @@ using System.Diagnostics;
 
 namespace XAYA
 {
-    public class PendingStateData
-    {
-    }
-
     public interface IXAYAWaitForChange
     {
         /*Wait for pending transaction to pass into memory pool*/
         void OnWaitForChangeNewBlock();
 
-        void OnWaitForChangeTID(PendingStateData latestPendingData);
+        void OnWaitForChangeTID(string latestPendingData);
 
-        bool SerializedPendingIsDifferent(PendingStateData latestPendingData);
+        bool SerializedPendingIsDifferent(string latestPendingData);
 
         void OnWaitForChangeGameChannel();
     }
+
+    public interface IXAYAWaitBase
+    { }
+
 
     public class XAYAWaitForChange : MonoBehaviour
     {
@@ -33,7 +33,8 @@ namespace XAYA
         int lastWaitForPendingChangeResult = -1;
         int lastWaitForChangeResultChannels = -1;
         int lastBlockHeight;
-        PendingStateData lastPendingData;
+        string lastPendingData = "";
+        bool hasPendingData = false;
 
         [HideInInspector]
         public List<MonoBehaviour> objectsRegisteredForWaitForChange;
@@ -80,7 +81,7 @@ namespace XAYA
                 RPCRequest r = new RPCRequest();
                 string reply = r.XAYAWaitForChangeGameChannels(lastWaitForChangeResultChannels);
 
-                if (reply != "" && !reply.Contains("null"))
+                if (reply != "")
                 {
                     JObject result = JObject.Parse(reply);
                     string versionString = result["result"]["version"].ToString();
@@ -197,6 +198,16 @@ namespace XAYA
             }
         }
 
+        public bool HasPendingData()
+        {
+            return hasPendingData;
+        }
+
+        public string GetLastPendingData()
+        {
+            return lastPendingData;
+        }
+
         IEnumerator WaitForChangePendings()
         {
             while (readyToAcceptPendingCalls == false)
@@ -212,7 +223,7 @@ namespace XAYA
                 RPCRequest r = new RPCRequest();
                 string reply = r.XAYAWaitForChangePending(lastWaitForPendingChangeResult);
 
-                if (reply != "" && !reply.Contains("null")) //Could happen, if charon nut loaded yet in light mode, also first block is null all the time
+                if (reply != "")
                 {
                     JObject result = JObject.Parse(reply);
                     string versionString = result["result"]["version"].ToString();
@@ -234,7 +245,10 @@ namespace XAYA
                             }
                         }
 
-                        PendingStateData pendingData = JsonConvert.DeserializeObject<PendingStateData>(result["result"]["pending"].ToString());
+                        string pendingData = result["result"]["pending"].ToString();
+
+                        hasPendingData = true;
+                        lastPendingData = pendingData;
 
                         if (this.PendingDataEquals(pendingData) == false)
                         {
@@ -268,35 +282,32 @@ namespace XAYA
                         }
                     }
                 }
+                else
+                {
+                    hasPendingData = false;
+                }
 
                 skipFirst = false;
             }
         }
 
-        private bool PendingDataEquals(PendingStateData currentPendingData)
+        private bool PendingDataEquals(string currentPendingData)
         {
-            string curSer = JsonConvert.SerializeObject(currentPendingData);
-            string storedData = JsonConvert.SerializeObject(lastPendingData);
-
-            if (storedData != curSer)
-            {
-                return false;
-            }
-
-            lastPendingData = currentPendingData;
-
-            return true;
+            return currentPendingData == lastPendingData;
         }
 
         void OnDestroy()
         {
-            ServicePoint pt1 = ServicePointManager.FindServicePoint(new System.Uri(XAYASettings.GameServerAddress));
-            ServicePoint pt2 = ServicePointManager.FindServicePoint(new System.Uri(XAYASettings.WalletServerAddress));
-            ServicePoint pt3 = ServicePointManager.FindServicePoint(new System.Uri(XAYASettings.XIDServerAddress));
+            if (XAYASettings.isRegtestMode == false)
+            {
+                ServicePoint pt1 = ServicePointManager.FindServicePoint(new System.Uri(XAYASettings.GameServerAddress));
+                ServicePoint pt2 = ServicePointManager.FindServicePoint(new System.Uri(XAYASettings.WalletServerAddress));
+                ServicePoint pt3 = ServicePointManager.FindServicePoint(new System.Uri(XAYASettings.XIDServerAddress));
 
-            pt1.CloseConnectionGroup("xaya");
-            pt2.CloseConnectionGroup("xaya");
-            pt3.CloseConnectionGroup("xaya");
+                pt1.CloseConnectionGroup("xaya");
+                pt2.CloseConnectionGroup("xaya");
+                pt3.CloseConnectionGroup("xaya");
+            }
         }
     }
 }

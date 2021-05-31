@@ -68,6 +68,7 @@
     <Compile Include="Assets\CielaSpike\Thread Ninja\TaskState.cs" />
     <Compile Include="Assets\CielaSpike\Thread Ninja\ThreadNinjaMonoBehaviourExtensions.cs" />
     <Compile Include="Assets\GSPToggleManager.cs" />
+    <Compile Include="Assets\ShipBattleGameAssets\Scripts\AspectRatioController.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\CannelPannelIno.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\Controller\BlockChainStatusView.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\Controller\BlockchainManager.cs" />
@@ -119,6 +120,7 @@
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\XAYAChat\XMPPConnection.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\XAYACore\AsyncCoroutineParent.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\XAYACore\AsynchroniousRequests.cs" />
+    <Compile Include="Assets\ShipBattleGameAssets\Scripts\XAYACore\AutomaticRegtestRunner.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\XAYACore\ConnectionStatusSolver.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\XAYACore\ElectrumWalletHandler.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\XAYACore\RPCRequest.cs" />

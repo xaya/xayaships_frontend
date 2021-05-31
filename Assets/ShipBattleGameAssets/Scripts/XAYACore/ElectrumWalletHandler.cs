@@ -107,6 +107,7 @@ namespace XAYA
             {
                 r.XAYANameRegister(enterNewNameField.text);
                 statusText.text = "The name will appear in name selection list next block";
+                XAYADummyUI.Instance.waitingForNewName = 5.0f;
             }
         }
 
@@ -146,6 +147,7 @@ namespace XAYA
         public void PanelClose()
         {
             //hide wallet in real game UI
+            XAYADummyUI.Instance.HideLiteWallet();
         }
 
         public void PanelShow()

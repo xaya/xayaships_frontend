@@ -11,6 +11,10 @@ namespace XAYA
 {
     public class XAYADummyUI : MonoBehaviour
     {
+        public bool useRegtestMode = false;
+
+        public static XAYADummyUI Instance;
+
         public GameObject WalletTypeSelectionPanel;
         public GameObject WalletLoadingInformationPanel;
         public GameObject SettingsPanel;
@@ -23,6 +27,14 @@ namespace XAYA
         public GameObject UsernameLoadingInformationPanel;
         public Text UsernameLoadingInformationalText;
 
+        //Lite wallet
+        public GameObject liteWalletPanel;
+        public GameObject liteWalletButton;
+        public GameObject liteWalletInner;
+
+        [HideInInspector]
+        public float waitingForNewName = -1.0f;
+
         /*Advanced mode GSP synch track vars*/
         private bool waitingToSynch = false;
         private float waitingToSynchTimer = -1.0f;
@@ -33,33 +45,70 @@ namespace XAYA
         private bool launchingCharon = false;
 
         private List<string> existingNamesFiltered;
-        public static XAYADummyUI Instance;
+
+
+        public void HideLiteWallet()
+        {
+            liteWalletButton.SetActive(true);
+            liteWalletInner.SetActive(false);
+        }
+
+        public void LiteWalletButtonShow()
+        {
+            liteWalletPanel.SetActive(true);
+            liteWalletButton.SetActive(true);
+        }
+
+        public void LiteWalletButtonClick()
+        {
+            liteWalletButton.SetActive(false);
+            liteWalletInner.SetActive(true);
+        }
 
         void Start()
         {
             Instance = this;
             request = new RPCRequest();
-            WalletTypeSelectionPanel.SetActive(true);
-            SettingsPanel.SetActive(true);
 
-            if(PlayerPrefs.HasKey("walletMode"))
+            if (useRegtestMode == false)
             {
-                string wm = PlayerPrefs.GetString("walletMode", "");
+                WalletTypeSelectionPanel.SetActive(true);
+                SettingsPanel.SetActive(true);
 
-                if(wm == "simple")
+                if (PlayerPrefs.HasKey("walletMode"))
                 {
-                    WalletSimpleModeClick();
-                }
+                    string wm = PlayerPrefs.GetString("walletMode", "");
 
-                if(wm == "advanced")
-                {
-                    WalletAdvancedModeClick();
+                    if (wm == "simple")
+                    {
+                        WalletSimpleModeClick();
+                    }
+
+                    if (wm == "advanced")
+                    {
+                        WalletAdvancedModeClick();
+                    }
                 }
+            }
+            else
+            {
+                WalletTypeSelectionPanel.SetActive(false);
+                WalletLoadingInformationPanel.SetActive(true);
+
+                PlayerPrefs.SetString("walletMode", "advanced");
+                PlayerPrefs.Save();
             }
         }
 
         public void Update()
         {
+            if(useRegtestMode)
+            {
+                useRegtestMode = false;
+                XAYASettings.isRegtestMode = true;
+                AutomaticRegtestRunner.Instance.LaunchDaemon();
+            }
+
             if (waitingToSynch)
             {
                 if (waitingToSynchTimer > 0)
@@ -83,6 +132,39 @@ namespace XAYA
                     ContinueLogingAfterXIDVerification();
                 }
             }
+
+            if(waitingForNewName > 0)
+            {
+                waitingForNewName -= Time.deltaTime;
+
+                if(waitingForNewName <= 0)
+                {
+                    int namesInListNow = existingNamesFiltered.Count - 1; //minus 1, as one in the list is empty
+
+                    List<string> existingNames = request.XAYAGetNameList();
+
+                    if (existingNames.Count != namesInListNow)
+                    {
+                        existingNamesFiltered = new List<string>();
+                        existingNamesFiltered.Add("");
+
+                        foreach (string name in existingNames)
+                        {
+                            if (name != "")
+                            {
+                                existingNamesFiltered.Add(name.Remove(0, 2));
+                            }
+                        }
+
+                        usernameSelectionList.ClearOptions();
+                        usernameSelectionList.AddOptions(existingNamesFiltered);
+                    }
+                    else
+                    {
+                        waitingForNewName = 5.0f;
+                    }
+                }
+            }
         }
 
         public void WalletSimpleModeClick()
@@ -90,6 +172,8 @@ namespace XAYA
             XAYAWalletAPI.Instance.SetElectrumWallet();
             WalletTypeSelectionPanel.SetActive(false);
             WalletLoadingInformationPanel.SetActive(true);
+
+            LiteWalletButtonShow();
 
             PlayerPrefs.SetString("walletMode", "simple");
             PlayerPrefs.Save();
@@ -153,14 +237,21 @@ namespace XAYA
                 if (resultOBJ["result"]["state"].ToString() == "up-to-date")
                 {
                     yield return Ninja.JumpToUnity;
-                    BringNameSelectionDialog();
+
+                    if (XAYASettings.isRegtestMode == false)
+                    {
+                        BringNameSelectionDialog();
+                    }
+                    else
+                    {
+                        GamePrelaunchRoutines();
+                    }
                 }
                 else
                 {
                     int currentGspBlockSynched = 0;
                     int.TryParse(resultOBJ["result"]["height"].ToString(), out currentGspBlockSynched);
-                    waitingToSynch = true;
-                    waitingToSynchTimer = 1.0f;
+                    WaitForTheDaemonToSync();
                     yield return Ninja.JumpToUnity;
                     WalletLoadingInformationalText.text = "Synching GSP, current block: " + currentGspBlockSynched;
                 }
@@ -168,19 +259,33 @@ namespace XAYA
             else if (result == "")
             {
                 yield return Ninja.JumpToUnity;
-                XAYASettings.FillAllConnectionSettings();
-                LanchDaemonIfNotRunningAlready();
-                waitingToSynch = true;
-                waitingToSynchTimer = 1.0f;
+
+                if (XAYASettings.isRegtestMode == false)
+                {
+                    XAYASettings.FillAllConnectionSettings();
+                    LanchDaemonIfNotRunningAlready();
+                }
+
+                WaitForTheDaemonToSync();
             }
             else
             {
                 yield return Ninja.JumpToUnity;
-                XAYASettings.FillAllConnectionSettings();
+
+                if (XAYASettings.isRegtestMode == false)
+                {
+                    XAYASettings.FillAllConnectionSettings();
+                }
+
                 LanchDaemonIfNotRunningAlready();
-                waitingToSynch = true;
-                waitingToSynchTimer = 1.0f;
+                WaitForTheDaemonToSync();
             }
+        }
+
+        public void WaitForTheDaemonToSync()
+        {
+            waitingToSynch = true;
+            waitingToSynchTimer = 1.0f;
         }
 
         IEnumerator ConfirmElectrumState()
@@ -246,9 +351,12 @@ namespace XAYA
 
             UsernameSelectionScreen.SetActive(false);
             UsernameLoadingInformationPanel.SetActive(false);
-            GlobalData.bLogin = true;
 
+            //This code is only relevant to XAYAHIPS, commented for other games
+            GlobalData.bLogin = true;
+            GameUserManager.Instance.UserManagerStart();
             ShipSDClient.Instance.SetUpShipClient();
+
             XAYAWaitForChange.Instance.StartRunning(true, false, true);
 
         }
@@ -319,7 +427,7 @@ namespace XAYA
             GamePrelaunchRoutines();
         }
 
-        void LanchDaemonIfNotRunningAlready()
+        public void LanchDaemonIfNotRunningAlready()
         {
             Process[] pname = Process.GetProcessesByName(XAYASettings.DaemonName);
 

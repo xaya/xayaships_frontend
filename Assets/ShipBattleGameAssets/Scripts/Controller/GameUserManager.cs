@@ -213,10 +213,13 @@ public class GameUserManager : MonoBehaviour
         runAsLiteMode = newVal;
     }
 
-    void UserManagerStart()
+    void Start()
     {
         Instance = this;
+    }
 
+    public void UserManagerStart()
+    {
         request = new RPCRequest();
         shipsdClient = GetComponent<ShipSDClient>();
         GlobalData.gErrorBox = errorPopup;

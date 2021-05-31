@@ -14,6 +14,19 @@ namespace XAYA
      * open connections tracking, caching e.t.c. */
     public class RPCRequest
     {
+        public string ElectrumWalletGetSeed()
+        {
+            List<object> requestData = new List<object>();
+            requestData.Add("getseed");
+
+
+            string result = this.HTTPXayaReq(this.CreateJObject(requestData, false), false, true);
+
+            JObject resultO = JObject.Parse(result);
+
+            return resultO["result"].ToString();
+        }
+
         public bool GspIsConnected()
         {
             List<object> requestData = new List<object>();
@@ -452,7 +465,7 @@ namespace XAYA
             return response;
         }
 
-        private string HTTPXayaReq(JObject job, bool ignoreDebugLog = false, bool ignoreElectrumFullpath = false, bool ignoreFiltering = false)
+        public string HTTPXayaReq(JObject job, bool ignoreDebugLog = false, bool ignoreElectrumFullpath = false, bool ignoreFiltering = false)
         {
             if (!XAYASettings.isElectrum())
             {
@@ -564,7 +577,7 @@ namespace XAYA
         }
 
         /* Creates a JObject containing the data to be sent in a JSONRPC HTTP request*/
-        private JObject CreateJObject(List<object> data, bool isNotification = false)
+        public JObject CreateJObject(List<object> data, bool isNotification = false)
         {
             JObject requestObject = new JObject();
 
@@ -584,7 +597,7 @@ namespace XAYA
         }
 
         /*Sends a JSONRPC HTTP request and receives the response*/
-        private string HTTPReq(JObject job, bool isXIDRequest = false, bool ignoreDebugLog = false, bool ignoreFiltering = false)
+        public string HTTPReq(JObject job, bool isXIDRequest = false, bool ignoreDebugLog = false, bool ignoreFiltering = false)
         {
             string requestString = JsonConvert.SerializeObject(job, Formatting.None);
             string address = XAYASettings.GameServerAddress;
@@ -644,6 +657,9 @@ namespace XAYA
                 try
                 {
                     JObject resultJobject = JObject.Parse(response);
+                    string ghgt = resultJobject["result"]["height"].ToString();
+                    int currentBlockCount = Int32.Parse(ghgt);
+                    XAYASettings.lastBlockHeight = currentBlockCount;
                     XAYASettings.gspHeightFetched = true;
                 }
                 catch (Exception ex)
@@ -730,19 +746,6 @@ namespace XAYA
             requestData.Add(data);
 
             string result = this.HTTPXayaReq(this.CreateJObject(requestData));
-
-            JObject resultO = JObject.Parse(result);
-
-            return resultO["result"].ToString();
-        }
-
-        public string ElectrumWalletGetSeed()
-        {
-            List<object> requestData = new List<object>();
-            requestData.Add("getseed");
-
-
-            string result = this.HTTPXayaReq(this.CreateJObject(requestData, false), false, true);
 
             JObject resultO = JObject.Parse(result);
 

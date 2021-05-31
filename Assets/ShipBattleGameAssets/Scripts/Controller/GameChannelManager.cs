@@ -39,12 +39,19 @@ namespace XAYA
         public void RunChannelService(string channelId)
         {
             gameChannelProcess = new System.Diagnostics.Process();
-            gameChannelProcess.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Normal;
-            gameChannelProcess.StartInfo.CreateNoWindow = false;
+            gameChannelProcess.StartInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+            gameChannelProcess.StartInfo.CreateNoWindow = true;
             gameChannelProcess.StartInfo.UseShellExecute = false;
-            gameChannelProcess.StartInfo.FileName = Application.streamingAssetsPath + "/Daemon/ships-channel.exe";
+            gameChannelProcess.StartInfo.FileName = Application.streamingAssetsPath + "/Daemon/" + XAYASettings.channelsDaemonName;
 
-            gameChannelProcess.StartInfo.Arguments = System.Environment.ExpandEnvironmentVariables(" --xaya_rpc_url=\"" + XAYASettings.GetServerUrl() + "\" --gsp_rpc_url=\"" + XAYASettings.GSPIP() + "\" --broadcast_rpc_url=\"" + XAYASettings.XAMPPbroadcastURL + ":" + XAYASettings.XAMPPbroadcastPORT + "\" --rpc_port=\"" + XAYASettings.gameChannelDefaultPort + "\" --playername=\"" + XAYASettings.playerName + "\" --channelid=\"" + channelId + "\"" + " --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+            if (XAYASettings.LoginMode == LoginMode.Simple)
+            {
+                gameChannelProcess.StartInfo.Arguments = System.Environment.ExpandEnvironmentVariables(" -noxaya_rpc_legacy_protocol --xaya_rpc_url=\"" + XAYASettings.GetServerUrl() + "\" --gsp_rpc_url=\"" + XAYASettings.GSPIP() + "\" --broadcast_rpc_url=\"" + XAYASettings.XAMPPbroadcastURL + ":" + XAYASettings.XAMPPbroadcastPORT + "\" --rpc_port=\"" + XAYASettings.gameChannelDefaultPort + "\" --playername=\"" + XAYASettings.playerName + "\" --channelid=\"" + channelId + "\"" + " --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+            }
+            else
+            {
+                gameChannelProcess.StartInfo.Arguments = System.Environment.ExpandEnvironmentVariables(" --xaya_rpc_url=\"" + XAYASettings.GetServerUrl() + "\" --gsp_rpc_url=\"" + XAYASettings.GSPIP() + "\" --broadcast_rpc_url=\"" + XAYASettings.XAMPPbroadcastURL + ":" + XAYASettings.XAMPPbroadcastPORT + "\" --rpc_port=\"" + XAYASettings.gameChannelDefaultPort + "\" --playername=\"" + XAYASettings.playerName + "\" --channelid=\"" + channelId + "\"" + " --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+            }
 
             Debug.Log("SHIPS CHANNEL STARTS WITH ARGUMENTS: " + gameChannelProcess.StartInfo.Arguments);
 

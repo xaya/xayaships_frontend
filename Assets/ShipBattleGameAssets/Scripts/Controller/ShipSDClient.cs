@@ -45,11 +45,11 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
         GetCurrentStateFromFreshChannel();
     }
 
-    public void OnWaitForChangeTID(PendingStateData latestPendingData)
+    public void OnWaitForChangeTID(string latestPendingData)
     {
     }
 
-    public bool SerializedPendingIsDifferent(PendingStateData latestPendingData)
+    public bool SerializedPendingIsDifferent(string latestPendingData)
     {
         return false;
     }
@@ -231,7 +231,6 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
             }
             if (ch == "m")
             {
-                Debug.Log("row: " + row + "col:" + col);
                 ourBoardManager.SetMarker(new Vector2(row, col), false);
             }
         }
@@ -244,8 +243,6 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
 
         RPCRequest request = new RPCRequest();
         request.ChannelXayaReqDirect(cmdstr);
-
-        Debug.Log("WE SHOOOOOOOT!!!");
     }
 
     public void RevealPositionRequest(string channelId)
@@ -286,28 +283,30 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
 
     public void SetGameChannelSateFromJson(string result)
     {
+        Debug.Log(result);
+
         JObject jresult = JObject.Parse(result) as JObject;
         jresult = jresult["result"] as JObject;
-        Debug.Log(jresult.ToString());
 
         if (jresult["existsonchain"] != null && (jresult["existsonchain"].ToString() == "false" || jresult["existsonchain"].ToString() == "False"))
         {
-            if (!GlobalData.bFinished)
+            if (GlobalData.bFinished == false && GlobalData.bPlaying)
             {
-                if (GlobalData.gPlayerIndex == GlobalData.gWinner)
-                    GlobalData.ErrorPopup("The game was finished. You have won.");
+                if (GlobalData.gbTurn == true)
+                {
+                    GlobalData.ErrorPopup("You are the loser according to the resolved duspute");
+                }
                 else
-                    GlobalData.ErrorPopup("The game was finished. You have lost.");
+                {
+                    GlobalData.ErrorPopup("You are the winner according to the resolved duspute");
+                }
 
-                Debug.Log("beforeInit:" + GlobalData.bLiveChannel);
                 InitGameboard();
-                Debug.Log("Init game! live:" + GlobalData.bLiveChannel);
                 GlobalData.bFinished = true;
             }
-            return;
-            //}
-        }
 
+            return;
+        }
 
         JArray participants = jresult["current"]["meta"]["participants"] as JArray;
 
@@ -381,12 +380,20 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
         if (jParsed["winner"] != null && jParsed["phase"].ToString() == "finished")
         {
             GlobalData.gWinner = int.Parse(jParsed["winner"].ToString());
-            Debug.Log("Game Finished!");
+
             string strInfo = "You have won.";
             if (GlobalData.gPlayerIndex != GlobalData.gWinner)
+            {
                 strInfo = "You have lost.";
+            }
+
             GetComponent<GameUserManager>().ShowInfo("GAME FINISHED! " + strInfo);
+
+            InitGameboard();
+            GlobalData.bFinished = true;
         }
+
+        Debug.Log("MY PHASE:" + jParsed["phase"].ToString());
     }
 
     // Start is called before the first frame update
@@ -483,23 +490,22 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
                 //=========================    ==============================//                    
                 if(!XAYADummyUI.Instance.IsExistName(opponentName))    //=== case  only other user====//
                 {
-                      if (!GlobalData.bLiveChannel && !GlobalData.IsIgnoreChannel(channelInfo.id))
-                    //   if (!GlobalData.bLiveChannel)
-                        {
+                    if (!GlobalData.bLiveChannel && !GlobalData.IsIgnoreChannel(channelInfo.id))
+                    {
                         GlobalData.InitGameChannelData();
                         GlobalData.bOpenedChannel = true;
                         //============= Create  Channe
                         GetComponent<GameUserManager>().StartGameByChannel(channelInfo.id);
                         //case menu is active, collapse  menu 
                         GetComponent<GameUserManager>().InitMenu();
-                        
 
                         GlobalData.bLiveChannel = true;
                         GlobalData.bFinished = false;
                         GlobalData.bPlaying = false;
-                        
+
+                        GlobalData.ggameIgnoredChannelIDs.Add(channelInfo.id);
+
                     }
-                    //Debug.Log(channelInfo.id);
                 }                    
 
             }
