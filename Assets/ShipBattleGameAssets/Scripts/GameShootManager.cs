@@ -65,10 +65,13 @@ public class GameShootManager: MonoBehaviour, IPointerClickHandler
     }
     public  void ClearMarker()
     {
-        foreach (GameObject g in shoots)
+        if (shoots != null)
         {
-            //if (Vector2.Distance( g.transform.position, pos) < 1)
+            foreach (GameObject g in shoots)
+            {
+                //if (Vector2.Distance( g.transform.position, pos) < 1)
                 GameObject.Destroy(g);
+            }
         }
     }
 

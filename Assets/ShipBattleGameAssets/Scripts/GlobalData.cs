@@ -78,8 +78,7 @@ public class GlobalData : MonoBehaviour {
         return ++portNumber;
     }
     public static ChannelInfo GetChannel(string id)
-    {
-        
+    {        
         foreach (ChannelInfo c in ggameChannelList)
         {
             if (c.id == id) return c;
@@ -140,6 +139,8 @@ public class ChannelInfo
     public CHANNEL_STATUE status;
     public string statusText;
     public bool bignored;
+
+    public bool isPending = false;
 }
 public class LeaderInfo
 {

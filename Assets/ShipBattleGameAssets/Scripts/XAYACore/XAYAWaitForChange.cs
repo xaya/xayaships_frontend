@@ -215,8 +215,6 @@ namespace XAYA
                 yield return new WaitForSeconds(0.1f);
             }
 
-            bool skipFirst = true;
-
             while (true)
             {
                 yield return Ninja.JumpBack;
@@ -226,58 +224,59 @@ namespace XAYA
                 if (reply != "")
                 {
                     JObject result = JObject.Parse(reply);
-                    string versionString = result["result"]["version"].ToString();
-
-                    int oldVersion = 0;
-                    int.TryParse(versionString, out oldVersion);
-
-                    yield return Ninja.JumpToUnity;
-
-                    if (lastWaitForPendingChangeResult != oldVersion)
+                    JToken tokenRS = result["result"];
+                    if (tokenRS.HasValues)
                     {
-                        lastWaitForPendingChangeResult = oldVersion;
-                        for (int s = 0; s < objectsRegisteredForWaitForChange.Count; s++)
+                        string versionString = result["result"]["version"].ToString();
+
+                        int oldVersion = 0;
+                        int.TryParse(versionString, out oldVersion);
+
+                        yield return Ninja.JumpToUnity;
+
+                        if (lastWaitForPendingChangeResult != oldVersion)
                         {
-                            if (objectsRegisteredForWaitForChange[s] == null)
-                            {
-                                objectsRegisteredForWaitForChange.RemoveAt(s);
-                                s = -1;
-                            }
-                        }
-
-                        string pendingData = result["result"]["pending"].ToString();
-
-                        hasPendingData = true;
-                        lastPendingData = pendingData;
-
-                        if (this.PendingDataEquals(pendingData) == false)
-                        {
+                            lastWaitForPendingChangeResult = oldVersion;
                             for (int s = 0; s < objectsRegisteredForWaitForChange.Count; s++)
                             {
-                                IXAYAWaitForChange wfc = (IXAYAWaitForChange)objectsRegisteredForWaitForChange[s].GetComponent(typeof(IXAYAWaitForChange));
-                                if (wfc != null)
+                                if (objectsRegisteredForWaitForChange[s] == null)
                                 {
-                                    if (skipFirst == false)
-                                    {
-                                        if (objectsRegisteredForWaitForChange[s].gameObject != null && objectsRegisteredForWaitForChange[s].gameObject.activeInHierarchy)
-                                        {
-                                            wfc.OnWaitForChangeTID(pendingData);
-                                        }
-                                        else if (objectsRegisteredForWaitForChange[s].gameObject == null)
-                                        {
-                                            wfc.OnWaitForChangeTID(pendingData);
-                                        }
-                                    }
+                                    objectsRegisteredForWaitForChange.RemoveAt(s);
+                                    s = -1;
                                 }
                             }
 
-                            for (int s = 0; s < objectsRegisteredForWaitForChangeIntefaceOnly.Count; s++)
+                            string pendingData = result["result"]["pending"].ToString();
+                            if (this.PendingDataEquals(pendingData) == false)
                             {
-                                IXAYAWaitForChange wfc2 = (IXAYAWaitForChange)objectsRegisteredForWaitForChangeIntefaceOnly[s];
-                                if (wfc2 != null)
+                                for (int s = 0; s < objectsRegisteredForWaitForChange.Count; s++)
                                 {
-                                    wfc2.OnWaitForChangeTID(pendingData);
+                                    IXAYAWaitForChange wfc = (IXAYAWaitForChange)objectsRegisteredForWaitForChange[s].GetComponent(typeof(IXAYAWaitForChange));
+                                    if (wfc != null)
+                                    {
+
+                                            if (objectsRegisteredForWaitForChange[s].gameObject != null && objectsRegisteredForWaitForChange[s].gameObject.activeInHierarchy)
+                                            {
+                                                wfc.OnWaitForChangeTID(pendingData);
+                                            }
+                                            else if (objectsRegisteredForWaitForChange[s].gameObject == null)
+                                            {
+                                                wfc.OnWaitForChangeTID(pendingData);
+                                            }
+                                    }
                                 }
+
+                                for (int s = 0; s < objectsRegisteredForWaitForChangeIntefaceOnly.Count; s++)
+                                {
+                                    IXAYAWaitForChange wfc2 = (IXAYAWaitForChange)objectsRegisteredForWaitForChangeIntefaceOnly[s];
+                                    if (wfc2 != null)
+                                    {
+                                        wfc2.OnWaitForChangeTID(pendingData);
+                                    }
+                                }
+
+                                hasPendingData = true;
+                                lastPendingData = pendingData;
                             }
                         }
                     }
@@ -286,8 +285,6 @@ namespace XAYA
                 {
                     hasPendingData = false;
                 }
-
-                skipFirst = false;
             }
         }
 

@@ -34,17 +34,17 @@ namespace XAYAChat
 
         #region User Define Methods
 
-        public void SetChannel(Jid jid, Matrix.Xmpp.MessageType msgType)
+        public void SetChannel(string jid, Matrix.Xmpp.MessageType msgType)
         {
-            Jid = jid.Bare.Split('@')[0];
+            Jid = jid;
             messageType = msgType;
 
-            if (jid.Bare.Split('@')[0].Equals(ConstantsChat.defaultTab))
+            if (jid.Equals(ConstantsChat.defaultTab))
             {
                 GetComponentInChildren<Text>().text = ConstantsChat.defaultTabText;
             }
             else
-                GetComponentInChildren<Text>().text = Jid.Bare.Split('@')[0];
+                GetComponentInChildren<Text>().text = jid;
         }
 
         public void OnPointerClick(PointerEventData eventData)

@@ -13,6 +13,7 @@ using System.Text.RegularExpressions;
 using System.Text;
 using System.Diagnostics;
 using XAYA;
+using XAYAChat;
 
 public class PlayerXIDSIgner
 {
@@ -188,6 +189,7 @@ public class GameUserManager : MonoBehaviour
     GameObject disputeGroup;
 
     public static GameUserManager Instance;
+    public bool isResolvingDisputeNow = false;
 
 
     private Process myProcessDaemonCharon;
@@ -290,22 +292,28 @@ public class GameUserManager : MonoBehaviour
     }
 
     public void OnSubmitPositions()
-    {      
+    {
+        if (isResolvingDisputeNow)
+        {
+            ToastManager.Show(LanguageStrings.Instance.texts[4]);
+            return;
+        }
+
         if (GlobalData.bPlaying)
         {
-            ShowInfo("You already submited ship's positions.");
+            ShowInfo(LanguageStrings.Instance.texts[16]);
         }
         
         if (GlobalData.gGameControl.gameMyBoard.CountOfShips()< 7)
         {
-            ShowInfo("Some ships do not point!\nYou can't submit ship's postitions.");
+            ShowInfo(LanguageStrings.Instance.texts[17]);
             return;
         }
            
        bool bValidate=GlobalData.gGameControl.gameMyBoard.ValidatePositions();
         if(!bValidate)
         {
-            ShowInfo("Positions of ships do not validate!\nYou can't submit ship's postitions.");
+            ShowInfo(LanguageStrings.Instance.texts[18]);
             return;
         }
 
@@ -322,7 +330,7 @@ public class GameUserManager : MonoBehaviour
 
         m_gamePlayboard.SetActive(false);
         m_gamePlayboard.SetActive(true);        
-        ShowInfo("START GAME.\n ARRANGE YOUR SHIPS!");
+        ShowInfo(LanguageStrings.Instance.texts[19]);
     }
   
     public void InitGameBoard()
@@ -358,15 +366,37 @@ public class GameUserManager : MonoBehaviour
     {
         if (bShow)
         {
+            isResolvingDisputeNow = true;
             disputeGroup.SetActive(false);
             disputeGroup.SetActive(true);
         }
         else
+        {
+            if(isResolvingDisputeNow)
+            {
+
+            }
+
+            isResolvingDisputeNow = false;
             disputeGroup.SetActive(false);
+        }
     }
     public void OnDisputeBtn()
     {
-        ShowInfo("You started a dispute!");
+        if (GlobalData.bLiveChannel == false)
+        {
+            ToastManager.Show(LanguageStrings.Instance.texts[20]);
+            return;
+        }
+
+        if (isResolvingDisputeNow)
+        {
+            ToastManager.Show(LanguageStrings.Instance.texts[21]);
+            return;
+        }
+
+        isResolvingDisputeNow = true;
+        ShowInfo(LanguageStrings.Instance.texts[22]);
         ShipSDClient.Instance.DisputeRequest();
     }
 }

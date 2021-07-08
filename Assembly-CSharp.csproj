@@ -95,6 +95,8 @@
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\GameModel\Ships\ShipType.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\GameShootManager.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\GlobalData.cs" />
+    <Compile Include="Assets\ShipBattleGameAssets\Scripts\HandleChannelsPendingDataAndNewBlockData.cs" />
+    <Compile Include="Assets\ShipBattleGameAssets\Scripts\LanguageStrings.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\PlayboardControl.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\RPCUtils.cs" />
     <Compile Include="Assets\ShipBattleGameAssets\Scripts\ScreenManager.cs" />

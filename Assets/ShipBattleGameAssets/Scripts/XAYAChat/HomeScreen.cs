@@ -265,6 +265,11 @@ namespace XAYAChat
         // Decode name
         public string DecodeXmppName(string name)
         {
+            if (name.Contains("@"))
+            {
+                name = name.Split('@')[0];
+            }
+
             if (name.Length == 0)
             {
                 return null;
@@ -515,10 +520,12 @@ namespace XAYAChat
                 {
                     // Send msg to person
 
+                    string encodeduser = HexadecimalEncoding.ToHexString(tab.Jid).ToLower();
+
                     if (tab.Jid.ToString().Contains("@"))
-                        XMPPConnection.Instance.SendMessageTOPerson(tab.Jid, inputLine);
+                        XMPPConnection.Instance.SendMessageTOPerson(encodeduser, inputLine);
                     else
-                        XMPPConnection.Instance.SendMessageTOPerson(tab.Jid + ConstantsChat.adrates + UIManagerChat.Instance.userDetailsModel.domainName, inputLine);
+                        XMPPConnection.Instance.SendMessageTOPerson(encodeduser + ConstantsChat.adrates + UIManagerChat.Instance.userDetailsModel.domainName, inputLine);
 
                     SetSingleLayoutFromUser(UIManagerChat.Instance.userDetailsModel.username, tab.Jid, inputLine, MessageType.Chat.ToString());
                 }
@@ -566,17 +573,19 @@ namespace XAYAChat
         {
             TabMatrix tab = null;
 
+            string ensureIsEncoded = DecodeXmppName(jid.Bare.Split('@')[0]);
+
             // Check that tab not exist
-            if (!this.Tabs.TryGetValue(jid.Bare.Split('@')[0], out tab))
+            if (!this.Tabs.TryGetValue(ensureIsEncoded, out tab))
             {
                 // create tab
                 Toggle cbtn = (Toggle)GameObject.Instantiate(this.TabToggleToInstantiate);
                 cbtn.gameObject.SetActive(true);
-                cbtn.GetComponentInChildren<TabMatrix>().SetChannel(jid, messageType);
+                cbtn.GetComponentInChildren<TabMatrix>().SetChannel(ensureIsEncoded, messageType);
                 cbtn.transform.SetParent(tabContent.transform, false);
                 tab = cbtn.GetComponentInChildren<TabMatrix>();
 
-                Tabs.Add(jid.Bare.Split('@')[0], tab);
+                Tabs.Add(ensureIsEncoded, tab);
             }
             return tab;
         }
@@ -617,7 +626,6 @@ namespace XAYAChat
             if (tab.messageType == MessageType.Chat)
             {
                 tab.closeButton.SetActive(true);
-
 
                 MemberMatrix member = GetMember(jid.Bare.Split('@')[0]);
 

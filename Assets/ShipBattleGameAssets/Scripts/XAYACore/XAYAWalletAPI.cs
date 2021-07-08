@@ -259,11 +259,13 @@ namespace XAYA
 
                         if (XAYASettings.isRegtestMode == false)
                         {
-                            myProcessDaemon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--xaya_rpc_url=\"http://" + XAYASettings.ElectronWalletUsername + ":" + XAYASettings.ElectronWalletPassword + "@" + XAYASettings.GameDaemonIP + ":" + XAYASettings.ElectronWalletPort + "\" --enable_pruning=1000 --game_rpc_port=" + XAYASettings.GameDaemonPort + " --datadir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"" + " --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+                            //myProcessDaemon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--xaya_rpc_url=\"http://" + XAYASettings.ElectronWalletUsername + ":" + XAYASettings.ElectronWalletPassword + "@" + XAYASettings.GameDaemonIP + ":" + XAYASettings.ElectronWalletPort + "\" --enable_pruning=1000 --game_rpc_port=" + XAYASettings.GameDaemonPort + " --datadir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"" + " --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+                            myProcessDaemon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--xaya_rpc_url=\"http://" + XAYASettings.ElectronWalletUsername + ":" + XAYASettings.ElectronWalletPassword + "@" + XAYASettings.GameDaemonIP + ":" + XAYASettings.ElectronWalletPort + "\" --enable_pruning=1000 --game_rpc_port=" + XAYASettings.GameDaemonPort + " --datadir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
                         }
                         else
                         {
-                            myProcessDaemon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--xaya_rpc_url=\"http://" + "xayagametest" + ":" + "xayagametest" + "@" + AutomaticRegtestRunner.Instance.randomDaemonPort + ":" + AutomaticRegtestRunner.Instance.randomPort + "\" --enable_pruning=1000 --game_rpc_port=" + AutomaticRegtestRunner.Instance.randomDaemonPort + " --datadir=\""+ Application.streamingAssetsPath + "../../../Tests/daemonGameData" + "\"" + " --v=1 --alsologtostderr=1 --log_dir=\""+ Application.streamingAssetsPath + "../../../Tests/daemonGameData" + "\"");
+                            //myProcessDaemon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--xaya_rpc_url=\"http://" + "xayagametest" + ":" + "xayagametest" + "@" + AutomaticRegtestRunner.Instance.randomDaemonPort + ":" + AutomaticRegtestRunner.Instance.randomPort + "\" --enable_pruning=1000 --game_rpc_port=" + AutomaticRegtestRunner.Instance.randomDaemonPort + " --datadir=\""+ Application.streamingAssetsPath + "../../../Tests/daemonGameData" + "\"" + " --v=1 --alsologtostderr=1 --log_dir=\""+ Application.streamingAssetsPath + "../../../Tests/daemonGameData" + "\"");
+                            myProcessDaemon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--xaya_rpc_url=\"http://" + "xayagametest" + ":" + "xayagametest" + "@" + AutomaticRegtestRunner.Instance.randomDaemonPort + ":" + AutomaticRegtestRunner.Instance.randomPort + "\" --enable_pruning=1000 --game_rpc_port=" + AutomaticRegtestRunner.Instance.randomDaemonPort + " --datadir=\""+ Application.streamingAssetsPath + "../../../Tests/daemonGameData" + "\"");
                         }
 
                         myProcessDaemon.EnableRaisingEvents = true;
@@ -574,11 +576,13 @@ namespace XAYA
 
             if (XAYASettings.localCharonServer == true)
             {
-                myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--server_jid " + XAYASettings.chatID + "@" + XAYASettings.chatDomainName + " --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\" --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+                // myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--server_jid " + XAYASettings.gameID + "@" + XAYASettings.chatDomainName + " --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\" --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+                myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--server_jid " + XAYASettings.gameID + "@" + XAYASettings.chatDomainName + " --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\"");
             }
             else
             {
-                myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--server_jid " + XAYASettings.chatID + "@" + XAYASettings.chatDomainName + " --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\"" + XAYASettings.additionalBackend + " --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+                // myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--server_jid " + XAYASettings.gameID + "@" + XAYASettings.chatDomainName + " --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\"" + XAYASettings.additionalBackend + " --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+                myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--server_jid " + XAYASettings.gameID + "@" + XAYASettings.chatDomainName + " --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\"" + XAYASettings.additionalBackend);
             }
 
             myProcessDaemonCharon.StartInfo.FileName = Application.streamingAssetsPath + "/Daemon/charon-client.exe";
@@ -607,6 +611,11 @@ namespace XAYA
             string userDirPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             string workingDir = userDirPath + "/Electrum-CHI";
 
+            if (XAYASettings.LoginMode == LoginMode.Advanced)
+            {
+                workingDir = userDirPath + "/XAYA-Electron";
+            }
+
             XAMPPServerDaemon = new Process();
             XAMPPServerDaemon.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             XAMPPServerDaemon.StartInfo.CreateNoWindow = true;
@@ -634,7 +643,15 @@ namespace XAYA
             RPCRequest r = new RPCRequest();
             PlayerXID nameData = r.XIDNameState(username);
 
-            if (nameData == null || (nameData.result.data.addresses.Count == 0 && nameData.result.data.signers.Count == 0))
+            while(nameData == null || nameData.result == null)
+            {
+                yield return new WaitForSeconds(1.0f);
+                nameData = r.XIDNameState(username);
+            }
+
+            retryXIDTest = true;
+
+            if (nameData.result.data.addresses.Count == 0 && nameData.result.data.signers.Count == 0)
             {
                 if (registeringXIDName == false)
                 {
@@ -772,8 +789,7 @@ namespace XAYA
 
             if (XIDNameIsRegistered == false)
             {
-                StartCoroutine(TestIfXIDNamePresent(informationFeedback));
-                retryXIDTest = true;
+                StartCoroutine(TestIfXIDNamePresent(informationFeedback));   
             }
             else
             {

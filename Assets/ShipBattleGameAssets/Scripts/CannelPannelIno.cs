@@ -16,11 +16,10 @@ public class CannelPannelIno : MonoBehaviour {
     [SerializeField]
     GameObject actBtn;
 
-	
 	// Update is called once per frame
 	void Update ()
     {
-		if(Id<GlobalData.ggameLobbyChannelList.Count)
+        if (Id<GlobalData.ggameLobbyChannelList.Count)
         {
             playerNameText.text =GlobalData.ggameLobbyChannelList[Id].id.Substring(0,7)+": ("+  GlobalData.ggameLobbyChannelList[Id].userNames[0];
             if (GlobalData.ggameLobbyChannelList[Id].userNames.Length == 2)
@@ -38,12 +37,22 @@ public class CannelPannelIno : MonoBehaviour {
             {
                 transform.Find("adctionBtn").Find("Text").GetComponent<Text>().text = "Close";
                 transform.Find("adctionBtn").GetComponent<Image>().color = new Color32(115,11, 10, 255);
+
+                if(GlobalData.ggameLobbyChannelList[Id].isPending)
+                {
+                    transform.Find("adctionBtn").GetComponent<Image>().color = new Color32(225, 0, 225, 255);
+                }
             }
 
             if (XAYASettings.playerName != GlobalData.ggameLobbyChannelList[Id].userNames[0] && GlobalData.ggameLobbyChannelList[Id].userNames.Length == 1)
             {
                 transform.Find("adctionBtn").Find("Text").GetComponent<Text>().text = "Join";
-                transform.Find("adctionBtn").GetComponent<Image>().color = new Color32(19, 136, 16, 255);             
+                transform.Find("adctionBtn").GetComponent<Image>().color = new Color32(19, 136, 16, 255);
+
+                if (GlobalData.ggameLobbyChannelList[Id].isPending)
+                {
+                    transform.Find("adctionBtn").GetComponent<Image>().color = new Color32(225, 0, 225, 255);
+                }
             }
 
         }

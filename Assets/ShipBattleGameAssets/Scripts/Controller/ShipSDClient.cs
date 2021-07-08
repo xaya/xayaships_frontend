@@ -6,6 +6,7 @@ using UnityEngine.Networking;using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System.Linq;
 using XAYA;
+using XAYAChat;
 
 public class DisputeStatus
 {
@@ -33,10 +34,16 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
     public GameShootManager ourBoardManager;
     GameUserManager gameUserManager;
 
+    private string lastKnownState = "";
+
     public static ShipSDClient Instance;
+
+    bool isJoining = false;
+    bool disputeWasRaised = false;
 
     public void OnWaitForChangeNewBlock()
     {
+        isJoining = false;
         GetCurrentStateFromFreshBlock();
     }
 
@@ -67,27 +74,58 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
 
     public void CreateGameChannel()
     {
+        if (GameUserManager.Instance.isResolvingDisputeNow)
+        {
+            ToastManager.Show(LanguageStrings.Instance.texts[0]);
+            return;
+        }
+
         if (GlobalData.IsOpenedChannel())
         {
-            gameUserManager.ShowInfo("You already have opened channel.");
+            gameUserManager.ShowInfo(LanguageStrings.Instance.texts[1]);
             return;
         }
 
         GameChannelManager.Instance.CreateGameChannel();
 
-        gameUserManager.ShowInfo("CREATE CHANNEL. Please wait...");
+        gameUserManager.ShowInfo(LanguageStrings.Instance.texts[2]);
     }
 
     public void JoinGameChannel(string channelId)
     {
-        GameChannelManager.Instance.JoinGameChannel(channelId);
-        GetComponent<GameUserManager>().ShowInfo("JOIN CHANNEL.(" + GlobalData.GetChannel(channelId).userNames[0] + ")" + ". Please wait...");
+        if(isJoining)
+        {
+            ToastManager.Show(LanguageStrings.Instance.texts[3]);
+            return;
+        }
+
+        if (GameUserManager.Instance.isResolvingDisputeNow)
+        {
+            ToastManager.Show(LanguageStrings.Instance.texts[4]);
+            return;
+        }
+
+        if (GlobalData.GetChannel(channelId).isPending == false)
+        {
+            isJoining = true;
+            GameChannelManager.Instance.JoinGameChannel(channelId);
+            GetComponent<GameUserManager>().ShowInfo(LanguageStrings.Instance.texts[5] + GlobalData.GetChannel(channelId).userNames[0] + ")" + LanguageStrings.Instance.texts[6]);
+        }
     }
 
     public void CloseGameChannel(string channelId)
     {
-        GameChannelManager.Instance.CloseGameChannel(channelId);
-        GetComponent<GameUserManager>().ShowInfo("CLOSE CHANNEL. Please wait...");
+        if (GameUserManager.Instance.isResolvingDisputeNow)
+        {
+            ToastManager.Show(LanguageStrings.Instance.texts[4]);
+            return;
+        }
+
+        if (GlobalData.GetChannel(channelId).isPending == false)
+        {
+            GameChannelManager.Instance.CloseGameChannel(channelId);
+            GetComponent<GameUserManager>().ShowInfo(LanguageStrings.Instance.texts[7]);
+        }
     }
 
     public void InitGameboard()
@@ -145,7 +183,7 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
 
         if (!bSetPos)
         {
-            GetComponent<GameUserManager>().ShowInfo("You must position your ships!");
+            GetComponent<GameUserManager>().ShowInfo(LanguageStrings.Instance.texts[8]);
             return;
         }
 
@@ -159,9 +197,9 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
 
     void SetDisputeStatus(JObject jsonDispute)
     {
-
         if (jsonDispute != null)
         {
+            disputeWasRaised = true;
             string jsonString = jsonDispute.ToString();
             DisputeStatus disputeStatus = JsonConvert.DeserializeObject<DisputeStatus>(jsonString);
             GlobalData.disputeStatus = disputeStatus;
@@ -169,11 +207,15 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
             if (!disputeStatus.canresolve)
             {
                 if (GlobalData.gbTurn)
-                    gameUserManager.ShowInfo("There is dispute!");
+                {
+                    gameUserManager.ShowInfo(LanguageStrings.Instance.texts[9]);
+                }
+
                 gameUserManager.DisputeDisplay();
             }
             else
             {
+
                 gameUserManager.DisputeDisplay(false);
             }
         }
@@ -247,6 +289,12 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
 
     public void RevealPositionRequest(string channelId)
     {
+        if (GameUserManager.Instance.isResolvingDisputeNow)
+        {
+            ToastManager.Show(LanguageStrings.Instance.texts[4]);
+            return;
+        }
+
         string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"revealposition\",\"params\":[]}";
 
         RPCRequest request = new RPCRequest();
@@ -255,6 +303,11 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
 
     public void SetPositionRequest(string channelId, string strPos)
     {
+        if (!GlobalData.bPlaying)
+        {
+            gameUserManager.ShowInfo(LanguageStrings.Instance.texts[23]);
+        }
+
         string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"setposition\",\"params\":[\"" + strPos + "\"]}";
 
         RPCRequest request = new RPCRequest();
@@ -277,6 +330,8 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
     {
         string cmdstr = "{\"jsonrpc\":\"2.0\", \"method\":\"filedispute\", \"id\":0}";
 
+        Debug.Log(cmdstr );
+
         RPCRequest request = new RPCRequest();
         request.ChannelXayaReqDirect(cmdstr);
     }
@@ -288,19 +343,23 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
         JObject jresult = JObject.Parse(result) as JObject;
         jresult = jresult["result"] as JObject;
 
+        //================= ****** Dispute  *****      ============================//
+        SetDisputeStatus(jresult["dispute"] as JObject);
+
         if (jresult["existsonchain"] != null && (jresult["existsonchain"].ToString() == "false" || jresult["existsonchain"].ToString() == "False"))
         {
-            if (GlobalData.bFinished == false && GlobalData.bPlaying)
+            if ((GlobalData.bFinished == false && GlobalData.bPlaying) || disputeWasRaised)
             {
                 if (GlobalData.gbTurn == true)
                 {
-                    GlobalData.ErrorPopup("You are the loser according to the resolved duspute");
+                    GlobalData.ErrorPopup(LanguageStrings.Instance.texts[10]);
                 }
                 else
                 {
-                    GlobalData.ErrorPopup("You are the winner according to the resolved duspute");
+                    GlobalData.ErrorPopup(LanguageStrings.Instance.texts[11]);
                 }
 
+                disputeWasRaised = false;
                 InitGameboard();
                 GlobalData.bFinished = true;
             }
@@ -354,7 +413,7 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
 
         if (!bOldTurn && GlobalData.gbTurn)
         {
-            GetComponent<GameUserManager>().ShowInfo("YOUR TURN!");
+            GetComponent<GameUserManager>().ShowInfo(LanguageStrings.Instance.texts[12]);
         }
 
         if (jresult["height"] != null)
@@ -362,8 +421,6 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
             GlobalData.gChannelHeight = long.Parse(jresult["height"].ToString());
         }
 
-        //================= ****** Dispute  *****      ============================//
-        SetDisputeStatus(jresult["dispute"] as JObject);
         //================= **** Shooting result **** ===================================//
         JObject jParsed = jresult["current"]["state"] as JObject;
         jParsed = jParsed["parsed"] as JObject;
@@ -381,19 +438,17 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
         {
             GlobalData.gWinner = int.Parse(jParsed["winner"].ToString());
 
-            string strInfo = "You have won.";
+            string strInfo = LanguageStrings.Instance.texts[14];
             if (GlobalData.gPlayerIndex != GlobalData.gWinner)
             {
-                strInfo = "You have lost.";
+                strInfo = LanguageStrings.Instance.texts[15];
             }
 
-            GetComponent<GameUserManager>().ShowInfo("GAME FINISHED! " + strInfo);
+            GetComponent<GameUserManager>().ShowInfo(LanguageStrings.Instance.texts[13] + strInfo);
 
             InitGameboard();
             GlobalData.bFinished = true;
         }
-
-        Debug.Log("MY PHASE:" + jParsed["phase"].ToString());
     }
 
     // Start is called before the first frame update
@@ -424,12 +479,20 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
             GlobalData.gblockhash = ret.result.blockhash;
             GlobalData.gblockHeight = ret.result.height;
             GlobalData.gblockStatusStr = ret.result.state;
-            SetGameSateFromJson(currentState);
+            SetGameSateFromJson(currentState, null);
         }
     }
 
-    public void SetGameSateFromJson(string result)
+    public void SetGameStateWithPendingData(PendingData pendingData)
     {
+        if (lastKnownState == "") return;
+        SetGameSateFromJson(lastKnownState, pendingData);
+    }
+
+    public void SetGameSateFromJson(string result, PendingData pendingData)
+    {
+        lastKnownState = result;
+
         JObject jresult = JObject.Parse(result) as JObject;
 
         //================  Get channel Info  ==============//
@@ -454,6 +517,25 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
             
             channelInfo.userNames = new string[a.Count];
             channelInfo.statusText =  item.Value["state"]["parsed"]["phase"].ToString();
+
+            if(pendingData != null)
+            {
+                for(int s =0; s < pendingData.abort.Count; s++)
+                {
+                    if(pendingData.abort[s] == channelInfo.id)
+                    {
+                        channelInfo.isPending = true;
+                    }
+                }
+
+                for (int s = 0; s < pendingData.join.Count; s++)
+                {
+                    if (pendingData.join[s].id == channelInfo.id)
+                    {
+                        channelInfo.isPending = true;
+                    }
+                }
+            }
 
             int index = 0;
             foreach(JObject j in a)
@@ -546,7 +628,7 @@ public class ShipSDClient : MonoBehaviour, IXAYAWaitForChange
         GlobalData.gblockHeight = ret.result.height;
         GlobalData.gblockStatusStr = ret.result.state;
         bCurrentLive = true;
-        SetGameSateFromJson(currentState);
+        SetGameSateFromJson(currentState, null);
     }
 }
 public class channels

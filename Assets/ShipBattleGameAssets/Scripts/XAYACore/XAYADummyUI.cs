@@ -102,6 +102,13 @@ namespace XAYA
 
         public void Update()
         {
+            if(Input.GetKeyUp(KeyCode.F12))
+            {
+                PlayerPrefs.DeleteAll();
+                PlayerPrefs.Save();
+                ToastManager.Show("Player prefs erased");
+            }
+
             if(useRegtestMode)
             {
                 useRegtestMode = false;
@@ -158,6 +165,14 @@ namespace XAYA
 
                         usernameSelectionList.ClearOptions();
                         usernameSelectionList.AddOptions(existingNamesFiltered);
+
+                        if (XAYASettings.LoginMode == LoginMode.Advanced)
+                        {
+                            if (usernameSelectionList.options.Count == 1)
+                            {
+                                waitingForNewName = 5.0f;
+                            }
+                        }
                     }
                     else
                     {
@@ -318,7 +333,6 @@ namespace XAYA
         void BringNameSelectionDialog()
         {
             WalletLoadingInformationPanel.SetActive(false);
-            SettingsPanel.SetActive(false);
             UsernameSelectionScreen.SetActive(true);
 
             List<string> existingNames = request.XAYAGetNameList();
@@ -335,6 +349,14 @@ namespace XAYA
 
             usernameSelectionList.ClearOptions();
             usernameSelectionList.AddOptions(existingNamesFiltered);
+
+            if(XAYASettings.LoginMode == LoginMode.Advanced)
+            {
+                if(usernameSelectionList.options.Count == 1)
+                {
+                    waitingForNewName = 5.0f;
+                }
+            }
         }
 
         private void GamePrelaunchRoutines()
@@ -357,7 +379,8 @@ namespace XAYA
             GameUserManager.Instance.UserManagerStart();
             ShipSDClient.Instance.SetUpShipClient();
 
-            XAYAWaitForChange.Instance.StartRunning(true, false, true);
+            XAYAWaitForChange.Instance.StartRunning(true, true, true);
+            XAYAWaitForChange.Instance.readyToAcceptPendingCalls = true;
 
         }
 
