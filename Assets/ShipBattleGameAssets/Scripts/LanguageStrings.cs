@@ -22,8 +22,8 @@ public class LanguageStrings : MonoBehaviour
         texts.Add("CLOSE CHANNEL. Please wait...");
         texts.Add("You must position your ships!");
         texts.Add("There is dispute!");
-        texts.Add("You are the loser according to the resolved duspute");
-        texts.Add("You are the winner according to the resolved duspute");
+        texts.Add("You are the loser according to the resolved dispute");
+        texts.Add("You are the winner according to the resolved dispute");
         texts.Add("YOUR TURN!");
         texts.Add("GAME FINISHED! ");
         texts.Add("You have won.");

@@ -20,6 +20,7 @@ namespace XAYA
         public GameObject SettingsPanel;
         public GameObject SettingsPanelInner;
         public GameObject UsernameSelectionScreen;
+        public GameObject CreateAccountButton;
 
         public Text WalletLoadingInformationalText;
         public Dropdown usernameSelectionList;
@@ -142,6 +143,8 @@ namespace XAYA
 
             if(waitingForNewName > 0)
             {
+                CreateAccountButton.GetComponent<Button>().interactable = false;
+
                 waitingForNewName -= Time.deltaTime;
 
                 if(waitingForNewName <= 0)
@@ -179,6 +182,10 @@ namespace XAYA
                         waitingForNewName = 5.0f;
                     }
                 }
+            }
+            else
+            {
+                CreateAccountButton.GetComponent<Button>().interactable = true;
             }
         }
 
@@ -444,10 +451,23 @@ namespace XAYA
 
             while (ss.gspSolved == false)
             {
+                //Lets additionally test, if charon client died for whatever reason. This could be certificate error,
+                //and then we can heuristially try and reauthenticate XID
+
+                if(XAYAWalletAPI.Instance.myProcessDaemonCharon.HasExited)
+                {
+                    UsernameLoadingInformationalText.text = "Charon client failed, trying to re-authenticate...";
+                    StartCoroutine(XAYAWalletAPI.Instance.EnsureXIDIsRegistered(UsernameLoadingInformationalText, true));
+                    break;
+                }
+
                 yield return null;
             }
 
-            GamePrelaunchRoutines();
+            if (ss.gspSolved == true)
+            {
+                GamePrelaunchRoutines();
+            }
         }
 
         public void LanchDaemonIfNotRunningAlready()

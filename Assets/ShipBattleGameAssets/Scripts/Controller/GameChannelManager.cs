@@ -46,11 +46,11 @@ namespace XAYA
 
             if (XAYASettings.LoginMode == LoginMode.Simple)
             {
-                gameChannelProcess.StartInfo.Arguments = System.Environment.ExpandEnvironmentVariables(" -noxaya_rpc_legacy_protocol --xaya_rpc_url=\"" + XAYASettings.GetServerUrl() + "\" --gsp_rpc_url=\"" + XAYASettings.GSPIP() + "\" --broadcast_rpc_url=\"" + XAYASettings.XAMPPbroadcastURL + ":" + XAYASettings.XAMPPbroadcastPORT + "\" --rpc_port=\"" + XAYASettings.gameChannelDefaultPort + "\" --playername=\"" + XAYASettings.playerName + "\" --channelid=\"" + channelId + "\"" + " --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+                gameChannelProcess.StartInfo.Arguments = System.Environment.ExpandEnvironmentVariables(" -noxaya_rpc_legacy_protocol --xaya_rpc_url=\"" + XAYASettings.GetServerUrl() + "\" --gsp_rpc_url=\"" + XAYASettings.GSPIP() + "\" --broadcast_rpc_url=\"" + XAYASettings.XAMPPbroadcastURL + ":" + XAYASettings.XAMPPbroadcastPORT + "\" --rpc_port=\"" + XAYASettings.gameChannelDefaultPort + "\" --playername=\"" + XAYASettings.playerName + "\" --channelid=\"" + channelId + "\"");
             }
             else
             {
-                gameChannelProcess.StartInfo.Arguments = System.Environment.ExpandEnvironmentVariables(" --xaya_rpc_url=\"" + XAYASettings.GetServerUrl() + "\" --gsp_rpc_url=\"" + XAYASettings.GSPIP() + "\" --broadcast_rpc_url=\"" + XAYASettings.XAMPPbroadcastURL + ":" + XAYASettings.XAMPPbroadcastPORT + "\" --rpc_port=\"" + XAYASettings.gameChannelDefaultPort + "\" --playername=\"" + XAYASettings.playerName + "\" --channelid=\"" + channelId + "\"" + " --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+                gameChannelProcess.StartInfo.Arguments = System.Environment.ExpandEnvironmentVariables(" --xaya_rpc_url=\"" + XAYASettings.GetServerUrl() + "\" --gsp_rpc_url=\"" + XAYASettings.GSPIP() + "\" --broadcast_rpc_url=\"" + XAYASettings.XAMPPbroadcastURL + ":" + XAYASettings.XAMPPbroadcastPORT + "\" --rpc_port=\"" + XAYASettings.gameChannelDefaultPort + "\" --playername=\"" + XAYASettings.playerName + "\" --channelid=\"" + channelId + "\"");
             }
 
             Debug.Log("SHIPS CHANNEL STARTS WITH ARGUMENTS: " + gameChannelProcess.StartInfo.Arguments);

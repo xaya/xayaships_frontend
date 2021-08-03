@@ -500,6 +500,8 @@ namespace XAYA
 
             string requestString = JsonConvert.SerializeObject(job, Formatting.None);
 
+            Debug.Log(requestString);
+
             request.Method = "POST";
             request.ContentType = "application/json-rpc";
 
@@ -552,6 +554,9 @@ namespace XAYA
 
             StreamReader reader = new StreamReader(webResponse.GetResponseStream());
             string response = reader.ReadToEnd();
+
+            Debug.Log("RESPONSE:" + response);
+
             return response;
         }
 

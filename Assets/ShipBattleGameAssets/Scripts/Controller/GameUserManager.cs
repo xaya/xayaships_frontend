@@ -293,12 +293,6 @@ public class GameUserManager : MonoBehaviour
 
     public void OnSubmitPositions()
     {
-        if (isResolvingDisputeNow)
-        {
-            ToastManager.Show(LanguageStrings.Instance.texts[4]);
-            return;
-        }
-
         if (GlobalData.bPlaying)
         {
             ShowInfo(LanguageStrings.Instance.texts[16]);

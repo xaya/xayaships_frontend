@@ -76,11 +76,12 @@ namespace XAYA
 
         Process myProcessDaemonCharonLocalServer;
         Process myProcessDaemonGSPLocal;
-        Process myProcessDaemonCharon;
+        public Process myProcessDaemonCharon;
 
         public bool xidIsSolved = false;
         private bool retryXIDTest = false;
         private bool registeringXIDName = false;
+        private string newXIDNameAddress = "";
         private bool XIDNameIsRegistered = false;
         private bool charonWaitingForXIDReply = false;
 
@@ -549,7 +550,8 @@ namespace XAYA
                 myProcessDaemonGSPLocal.StartInfo.UseShellExecute = false;
                 myProcessDaemonGSPLocal.StartInfo.FileName = Application.streamingAssetsPath + "/Daemon/" + XAYASettings.DaemonName + ".exe";
 
-                myProcessDaemonGSPLocal.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--xaya_rpc_url=\"http://" + XAYASettings.ElectronWalletUsername + ":" + XAYASettings.ElectronWalletPassword + "@" + XAYASettings.ElectronWalletIPAddress + ":" + XAYASettings.ElectronWalletPort + "\" --enable_pruning=1000 --game_rpc_port=" + XAYASettings.GameDaemonPort + " --datadir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"" + " --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+                //myProcessDaemonGSPLocal.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--xaya_rpc_url=\"http://" + XAYASettings.ElectronWalletUsername + ":" + XAYASettings.ElectronWalletPassword + "@" + XAYASettings.ElectronWalletIPAddress + ":" + XAYASettings.ElectronWalletPort + "\" --enable_pruning=1000 --game_rpc_port=" + XAYASettings.GameDaemonPort + " --datadir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"" + " --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+                myProcessDaemonGSPLocal.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--xaya_rpc_url=\"http://" + XAYASettings.ElectronWalletUsername + ":" + XAYASettings.ElectronWalletPassword + "@" + XAYASettings.ElectronWalletIPAddress + ":" + XAYASettings.ElectronWalletPort + "\" --enable_pruning=1000 --game_rpc_port=" + XAYASettings.GameDaemonPort + " --datadir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
                 myProcessDaemonGSPLocal.EnableRaisingEvents = true;
                 myProcessDaemonGSPLocal.Start();
 
@@ -557,7 +559,8 @@ namespace XAYA
                 myProcessDaemonCharonLocalServer.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
                 myProcessDaemonCharonLocalServer.StartInfo.CreateNoWindow = true;
                 myProcessDaemonCharonLocalServer.StartInfo.UseShellExecute = false;
-                myProcessDaemonCharonLocalServer.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--pubsub_service \"pubsub.chat.xaya.io\" --server_jid \"xmpptest1@chat.xaya.io\" --password \"" + "CkEfa5+WT2Rc5/TiMDhMynAbSJ+DY9FmE5lcWgWMRQWUBV5UQsgjiBWL302N4kdLZYygJVBVx3vYsDNUx8xBbw27WA==" + "\" --backend_rpc_url \"http://localhost:"+XAYASettings.GameDaemonPort+"\" --waitforchange --waitforpendingchange --methods_json_spec=\"" + stubsServer + "\" --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+                //myProcessDaemonCharonLocalServer.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--pubsub_service \"pubsub.chat.xaya.io\" --server_jid \"xmpptest1@chat.xaya.io\" --password \"" + "CkEfa5+WT2Rc5/TiMDhMynAbSJ+DY9FmE5lcWgWMRQWUBV5UQsgjiBWL302N4kdLZYygJVBVx3vYsDNUx8xBbw27WA==" + "\" --backend_rpc_url \"http://localhost:"+XAYASettings.GameDaemonPort+"\" --waitforchange --waitforpendingchange --methods_json_spec=\"" + stubsServer + "\" --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+                myProcessDaemonCharonLocalServer.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--pubsub_service \"pubsub.chat.xaya.io\" --server_jid \"xmpptest1@chat.xaya.io\" --password \"" + "CkEfa5+WT2Rc5/TiMDhMynAbSJ+DY9FmE5lcWgWMRQWUBV5UQsgjiBWL302N4kdLZYygJVBVx3vYsDNUx8xBbw27WA==" + "\" --backend_rpc_url \"http://localhost:" + XAYASettings.GameDaemonPort + "\" --waitforchange --waitforpendingchange --methods_json_spec=\"" + stubsServer + "\"");
 
                 myProcessDaemonCharonLocalServer.StartInfo.FileName = Application.streamingAssetsPath + "/Daemon/charon-server.exe";
                 myProcessDaemonCharonLocalServer.StartInfo.WorkingDirectory = workingDir;
@@ -576,13 +579,13 @@ namespace XAYA
 
             if (XAYASettings.localCharonServer == true)
             {
-                // myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--server_jid " + XAYASettings.gameID + "@" + XAYASettings.chatDomainName + " --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\" --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
-                myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--server_jid " + XAYASettings.gameID + "@" + XAYASettings.chatDomainName + " --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\"");
+                // myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables(" --cafile=\"" + Application.streamingAssetsPath + "/Daemon/letsencrypt.pem\" --server_jid " + XAYASettings.gameID + "@" + XAYASettings.chatDomainName + " --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\" --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+                myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables(" --cafile=\"" + Application.streamingAssetsPath + "/Daemon/letsencrypt.pem\" --server_jid " + XAYASettings.gameID + "@" + XAYASettings.chatDomainName + " --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\"");
             }
             else
             {
-                // myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--server_jid " + XAYASettings.gameID + "@" + XAYASettings.chatDomainName + " --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\"" + XAYASettings.additionalBackend + " --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
-                myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--server_jid " + XAYASettings.gameID + "@" + XAYASettings.chatDomainName + " --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\"" + XAYASettings.additionalBackend);
+                // myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables(" --cafile=\"" + Application.streamingAssetsPath + "/Daemon/letsencrypt.pem\" --server_jid " + XAYASettings.gameID + "@" + XAYASettings.chatDomainName + " --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\"" + XAYASettings.additionalBackend + " --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\"");
+                myProcessDaemonCharon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables(" --cafile=\"" + Application.streamingAssetsPath + "/Daemon/letsencrypt.pem\" --server_jid " + XAYASettings.gameID + "@" + XAYASettings.chatDomainName + " --client_jid " + ourXIDLogin + " --password \"" + ourXIDpassword + "\" --waitforchange --waitforpendingchange --port=" + XAYASettings.GameDaemonPort + " --methods_json_spec=\"" + stubs + "\"" + XAYASettings.additionalBackend);
             }
 
             myProcessDaemonCharon.StartInfo.FileName = Application.streamingAssetsPath + "/Daemon/charon-client.exe";
@@ -620,7 +623,9 @@ namespace XAYA
             XAMPPServerDaemon.StartInfo.WindowStyle = ProcessWindowStyle.Hidden;
             XAMPPServerDaemon.StartInfo.CreateNoWindow = true;
             XAMPPServerDaemon.StartInfo.UseShellExecute = false;
-            XAMPPServerDaemon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--game_id \"" + XAYASettings.gameID + "\" --jid " + ourXIDLogin + " --password " + ourXIDpassword + " --muc \"muc."+XAYASettings.chatDomainName+"\" --port "+ XAYASettings.XAMPPbroadcastPORT);
+            //XAMPPServerDaemon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--game_id \"" + XAYASettings.gameID + "\" --jid " + ourXIDLogin + " --password " + ourXIDpassword + " --muc \"muc."+XAYASettings.chatDomainName+"\" --port "+ XAYASettings.XAMPPbroadcastPORT + " --v=1 --alsologtostderr=1 --log_dir=\"%appdata%/XAYA-Electron/" + XAYASettings.DaemonName + "data/\" --cafile=\"" + Application.streamingAssetsPath + "/Daemon/letsencrypt.pem\"");
+
+            XAMPPServerDaemon.StartInfo.Arguments = Environment.ExpandEnvironmentVariables("--game_id \"" + XAYASettings.gameID + "\" --jid " + ourXIDLogin + " --password " + ourXIDpassword + " --muc \"muc." + XAYASettings.chatDomainName + "\" --port " + XAYASettings.XAMPPbroadcastPORT + " --cafile=\"" + Application.streamingAssetsPath + "/Daemon/letsencrypt.pem\"");
 
             XAMPPServerDaemon.StartInfo.FileName = Application.dataPath + "/StreamingAssets/Daemon/xmpp-broadcast-rpc-server.exe";
             XAMPPServerDaemon.StartInfo.WorkingDirectory = workingDir;
@@ -629,7 +634,7 @@ namespace XAYA
             XAMPPServerDaemon.Start();
         }
 
-        IEnumerator TestIfXIDNamePresent(Text informationFeedback)
+        public IEnumerator TestIfXIDNamePresent(Text informationFeedback, bool forceReauth = false)
         {
             yield return null;
 
@@ -649,16 +654,14 @@ namespace XAYA
                 nameData = r.XIDNameState(username);
             }
 
-            retryXIDTest = true;
-
-            if (nameData.result.data.addresses.Count == 0 && nameData.result.data.signers.Count == 0)
+            if (nameData.result.data.addresses.Count == 0 && nameData.result.data.signers.Count == 0 || forceReauth)
             {
                 if (registeringXIDName == false)
                 {
                     registeringXIDName = true;
-                    string newAddresss = r.GetNewAddressForXIDChat();
+                    newXIDNameAddress = r.GetNewAddressForXIDChat();
 
-                    JObject result = JObject.Parse(newAddresss);
+                    JObject result = JObject.Parse(newXIDNameAddress);
                     string resAddress = result["result"].ToString();
 
                     JObject data = JObject.Parse("{\"g\":{\"id\":{\"s\":{\"g\":[\"" + resAddress + "\"]}}}}");
@@ -669,8 +672,6 @@ namespace XAYA
             }
             else
             {
-                registeringXIDName = false;
-
                 if (XAYASettings.isElectrum())
                 {
 
@@ -680,19 +681,37 @@ namespace XAYA
                     bool signSolved = false;
                     XAYASettings.liteSigned = "";
 
-
-                    /*If name was transferred, we might need to iterate the lists and resign the mssage*/
+                    List<List<string>> addressList = r.GetAddressList();
 
                     for (int f = 0; f < nameData.result.data.signers[0].addresses.Count; f++)
                     {
-                        XAYASettings.liteSigned = r.SingMessage(nameData.result.data.signers[0].addresses[f], XAYASettings.liteAuthMessage);
+                        //Do we have the address? We might not, in case name was transferred
 
-                        if (XAYASettings.liteSigned != "")
+                        bool addresIsInList = false;
+
+                        if (addressList != null)
                         {
-                            signSolved = true;
-                            XIDNameIsRegistered = true;
+                            for (int s = 0; s < addressList.Count; s++)
+                            {
+                                if (addressList[s].Contains(nameData.result.data.signers[0].addresses[f]))
+                                {
+                                    addresIsInList = true;
+                                    break;
+                                }
+                            }
                         }
 
+                        if (addresIsInList)
+                        {
+                            XAYASettings.liteSigned = r.SingMessage(nameData.result.data.signers[0].addresses[f], XAYASettings.liteAuthMessage);
+
+                            if (XAYASettings.liteSigned != "")
+                            {
+                                signSolved = true;
+                                XIDNameIsRegistered = true;
+                            }
+                        }
+                        
                         yield return null;
                     }
 
@@ -721,26 +740,25 @@ namespace XAYA
                                     if (registeringXIDName == false)
                                     {
                                         r = new RPCRequest();
-                                        string newAddresss = r.GetNewAddressForXIDChat();
+                                        newXIDNameAddress = r.GetNewAddressForXIDChat();
 
-                                        JObject result = JObject.Parse(newAddresss);
+                                        JObject result = JObject.Parse(newXIDNameAddress);
                                         string resAddress = result["result"].ToString();
 
-                                        JObject data = JObject.Parse("{\"g\":{\"id\":{\"" + XAYASettings.gameID + "\":{\"g\":[\"" + resAddress + "\"]}}}}");
+                                        JObject data = JObject.Parse("{\"g\":{\"id\":{\"" + "s" + "\":{\"g\":[\"" + resAddress + "\"]}}}}");
                                         r.XAYANameUpdateDirect(username, data);
-
                                         registeringXIDName = true;
-                                        tries++;
                                     }
+
+                                    tries++;
                                 }
                             }
                             catch (Exception ex)
                             {
                             }
 
-                            if (tries >= 3 && registeringXIDName == false)
+                            if (tries >= 6)
                             {
-
                                 break;
                             }
 
@@ -749,15 +767,34 @@ namespace XAYA
 
                         signSolved = false;
                         XAYASettings.liteSigned = "";
-
+       
                         for (int f = 0; f < nameData.result.data.signers[0].addresses.Count; f++)
                         {
-                            try
+
+                            bool addresIsInList = false;
+
+                            if (addressList != null)
                             {
-                                XAYASettings.liteSigned = r.SingMessage(nameData.result.data.signers[0].addresses[f], XAYASettings.liteAuthMessage);
+                                for (int s = 0; s < addressList.Count; s++)
+                                {
+                                    if (addressList[s].Contains(nameData.result.data.signers[0].addresses[f]))
+                                    {
+                                        addresIsInList = true;
+                                        break;
+                                    }
+                                }
                             }
-                            catch (Exception ex)
+
+                            if (addresIsInList)
                             {
+                                try
+                                {
+                                    XAYASettings.liteSigned = r.SingMessage(nameData.result.data.signers[0].addresses[f], XAYASettings.liteAuthMessage);
+                                }
+                                catch (Exception ex)
+                                {
+
+                                }
 
                             }
 
@@ -777,19 +814,20 @@ namespace XAYA
                 }
             }
 
+            retryXIDTest = true;
             yield return null;
         }
 
-        public IEnumerator EnsureXIDIsRegistered(Text informationFeedback)
+        public IEnumerator EnsureXIDIsRegistered(Text informationFeedback, bool forceReauth = false)
         {
             informationFeedbackLastKnow = informationFeedback;
 
             xidIsSolved = false;
             retryXIDTest = false;
 
-            if (XIDNameIsRegistered == false)
+            if (XIDNameIsRegistered == false || forceReauth)
             {
-                StartCoroutine(TestIfXIDNamePresent(informationFeedback));   
+                StartCoroutine(TestIfXIDNamePresent(informationFeedback, forceReauth));   
             }
             else
             {
